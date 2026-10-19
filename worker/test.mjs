@@ -10,7 +10,8 @@ const call = async (path, method = 'GET', body, token) => { const r = await w.fe
 const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; } else console.log('ok', m); };
 let [s, d] = await call('/login', 'POST', { user: 'dev', pass: 'nope' }); assert(s === 401, 'bad password rejected');
 [s, d] = await call('/status'); assert(s === 401, 'status needs login');
-[s, d] = await call('/login', 'POST', { user: 'dev', pass: 'pw-123' }); assert(s === 200 && d.token, 'login ok'); const t = d.token;
+[s, d] = await call('/login', 'POST', { user: 'DEV', pass: 'PW-123' }); assert(s === 401, 'password is case-sensitive');
+[s, d] = await call('/login', 'POST', { user: ' Dev ', pass: 'pw-123 ' }); assert(s === 200 && d.token, 'login ok (username any case, spaces ignored)'); const t = d.token;
 [s, d] = await call('/status', 'GET', null, t + 'x'); assert(s === 401, 'tampered token rejected');
 [s, d] = await call('/status', 'GET', null, Date.now() - 1 + '.' + t.split('.')[1]); assert(s === 401, 'expired/forged exp rejected');
 [s, d] = await call('/status', 'GET', null, t); assert(s === 200 && d.run.status === 'completed', 'status ok');

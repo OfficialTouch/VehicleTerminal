@@ -45,7 +45,8 @@ async function handle(req, env) {
   const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
 
   if (pathname === '/login' && req.method === 'POST') {
-    const ok = (await same(body.user || '', env.DEV_USER)) & (await same(body.pass || '', env.DEV_PASS));
+    // username ignores case; both ignore stray spaces (easy to add when pasting into the dashboard)
+    const ok = (await same(String(body.user || '').trim().toLowerCase(), String(env.DEV_USER || '').trim().toLowerCase())) & (await same(String(body.pass || '').trim(), String(env.DEV_PASS || '').trim()));
     if (!ok) { await new Promise((r) => setTimeout(r, 800)); return [401, { error: 'Wrong username or password' }]; } // shortcut: delay only, no lockout; add KV rate-limit if abused
     const exp = Date.now() + SESSION_DAYS * 864e5;
     return [200, { token: exp + '.' + (await sign(env, exp)), exp }];

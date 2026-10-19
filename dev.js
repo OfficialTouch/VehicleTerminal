@@ -79,7 +79,7 @@
   $('dev-login-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var btn = $('dev-login-go'); btn.disabled = true; $('dev-login-err').textContent = '';
-    api('/login', { user: $('dev-user').value.trim(), pass: $('dev-pass').value }).then(function (d) {
+    api('/login', { user: $('dev-user').value.trim(), pass: $('dev-pass').value.trim() }).then(function (d) {
       token = d.token; store.set(token); $('dev-pass').value = ''; $('dev-login').close(); show();
     }).catch(function (err) { $('dev-login-err').textContent = err.message; }).then(function () { btn.disabled = false; });
   });
