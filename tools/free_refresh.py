@@ -6,7 +6,16 @@ import xml.etree.ElementTree as ET
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROFILES = os.path.join(ROOT, 'data', 'car_profiles.json')
-MAX_HEADLINES, MAX_NEW_HEADLINES = 8, 4
+MAX_HEADLINES, MAX_AUTO = 8, 4  # at most 4 automatic headlines, so researched ones stay
+# only real car-news outlets (Google News also returns gossip, games, dealer ads, foreign sites)
+OUTLETS = ['car and driver', 'motortrend', 'road & track', 'road and track', 'hagerty', 'jalopnik', 'the drive', 'autoblog',
+           'motor1', 'top gear', 'autocar', 'carbuzz', 'carscoops', 'edmunds', 'kelley blue book', 'kbb', 'autoweek',
+           'automotive news', 'evo', 'pistonheads', 'bmwblog', 'corvette blogger', 'gm authority', 'gm inside news',
+           'consumer reports', 'nhtsa', 'carexpert', 'car magazine', 'autoevolution', 'insideevs', 'electrek',
+           'slashgear', 'topspeed', 'top speed', 'robb report', 'dupont registry', 'classic.com', 'bring a trailer',
+           'carwow', 'whatcar', 'what car', 'autotrader', 'cars.com', 'cargurus', 'the autopian', 'rennlist', 'flatsixes',
+           'corvetteforum', 'mbworld', 'gtrlife', 'carsales', 'drive.com.au']
+SKIP = ['for sale in', 'for sale:', 'gran turismo', 'assetto', 'iracing', 'forza', ' gt3', 'lego', 'hot wheels', 'diecast']
 
 
 def fetch(url):
@@ -74,7 +83,9 @@ def new_headlines(p, feeds):
         if outlet and title.endswith(' - ' + outlet):
             title = title[: -len(outlet) - 3]
         key = re.sub(r'\W+', '', title.lower())
-        if not title or not link.startswith('https://') or key in have or (terms and not any(t in title.lower() for t in terms)):
+        low = title.lower()
+        if (not title or not link.startswith('https://') or key in have or (terms and not any(t in low for t in terms))
+                or not any(o in outlet.lower() for o in OUTLETS) or any(w in low for w in SKIP)):
             continue
         try:
             d = datetime.datetime.strptime((it.findtext('pubDate') or '')[:16], '%a, %d %b %Y')
@@ -83,7 +94,7 @@ def new_headlines(p, feeds):
         have.add(key)
         out.append({'date': d.strftime('%b %d, %Y'), 'title': title, 'outlet': outlet or 'News', 'url': link, 'auto': True})
     out.sort(key=lambda h: parse_date(h['date']), reverse=True)
-    return out[:MAX_NEW_HEADLINES]
+    return out[:MAX_AUTO]
 
 
 def main():
@@ -101,7 +112,11 @@ def main():
             p['recall_note'] = (note + f' Updated {today}: {len(rec)} new recall(s) added automatically; check them on nhtsa.gov.').strip()
         news = new_headlines(p, feeds)
         if news:
-            p['headlines'] = sorted(news + (p.get('headlines') or []), key=lambda h: parse_date(h.get('date', '')), reverse=True)[:MAX_HEADLINES]
+            by_date = lambda h: parse_date(h.get('date', ''))
+            old = p.get('headlines') or []
+            auto = sorted(news + [h for h in old if h.get('auto')], key=by_date, reverse=True)[:MAX_AUTO]
+            kept = sorted([h for h in old if not h.get('auto')], key=by_date, reverse=True)[:MAX_HEADLINES - len(auto)]
+            p['headlines'] = sorted(auto + kept, key=by_date, reverse=True)
         if rec or news:
             notes.append(f"{p['name']}: {len(rec)} new recall(s), {len(news)} new headline(s)")
     json.dump(P, open(PROFILES, 'w'), ensure_ascii=False, separators=(',', ':'))
