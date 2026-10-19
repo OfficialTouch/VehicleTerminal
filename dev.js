@@ -61,6 +61,14 @@
     }).catch(function (e) { say(e.message, 'bad'); });
   }
 
+  // centered "Are you sure?" box for anything that uses the Claude plan
+  function sure(msg, yes) {
+    var dlg = $('dev-confirm');
+    $('dev-confirm-msg').textContent = msg;
+    dlg.returnValue = '';
+    dlg.onclose = function () { if (dlg.returnValue === 'yes') yes(); };
+    dlg.showModal();
+  }
   function run(cmd, car) {
     busy(true); say('Starting…', 'run');
     api('/run', { cmd: cmd, car: car }).then(function () {
@@ -85,13 +93,13 @@
   });
   $('dev-news').addEventListener('click', function () { run('news'); }); // free: no Claude, a few minutes
   $('dev-refresh').addEventListener('click', function () {
-    if (confirm('Refresh listings, auction sales and KBB values for every car? This uses your Claude plan and can take up to an hour. (News and recalls are refreshed free, separately.)')) run('refresh');
+    sure('Refresh listings, auction sales and KBB values for every car? It can take up to an hour. (News and recalls are refreshed free, separately.)', function () { run('refresh'); });
   });
   $('dev-add-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var car = $('dev-car').value.trim();
     if (!/^[A-Za-z0-9 .,()\/&'+\-]{2,80}$/.test(car)) { say('Type the car like: Porsche 718 Cayman GTS 4.0 2020-2023', 'bad'); return; }
-    if (confirm('Research and add "' + car + '"? This uses your Claude plan and takes about 15–30 minutes.')) { run('add', car); $('dev-car').value = ''; }
+    sure('Research and add "' + car + '"? It takes about 15–30 minutes.', function () { run('add', car); $('dev-car').value = ''; });
   });
   $('dev-logout').addEventListener('click', logout);
   show();

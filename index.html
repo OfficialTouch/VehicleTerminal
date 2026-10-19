@@ -144,6 +144,12 @@ html, body { margin:0; background:#000; }
 .dev-plain { background:#111; color:#e8e8e8; border:1px solid #3a3a3a !important; }
 .dev-status { flex-basis:100%; margin:0; color:#bdbdbd; } .dev-status.ok { color:var(--color-ok); } .dev-status.bad { color:var(--color-bad); } .dev-status.run { color:var(--amber-hi); }
 .dev-last { flex-basis:100%; margin:0; color:#8a8a8a; font-size:11px; }
+#dev-login, #dev-confirm { position:fixed; inset:0; margin:auto !important; height:fit-content; max-height:90vh; }
+#dev-confirm { background:#0b0b0b; color:#e8e8e8; border:1px solid var(--amber); padding:0; width:min(92vw, 400px); font-family:var(--font-anthropic-sans); }
+#dev-confirm::backdrop { background:rgba(0,0,0,.75); }
+#dev-confirm h2 { margin:0; padding:8px 14px; background:var(--strip); color:#cfe5ff; font-size:12px; letter-spacing:.08em; }
+#dev-confirm form { display:grid; gap:12px; padding:14px; }
+#dev-confirm button { min-height:44px; padding:0 14px; border:0; border-radius:3px; font:inherit; font-weight:700; letter-spacing:.06em; cursor:pointer; }
 #dev-login { background:#0b0b0b; color:#e8e8e8; border:1px solid var(--amber); padding:0; width:min(92vw, 360px); font-family:var(--font-anthropic-sans); }
 #dev-login::backdrop { background:rgba(0,0,0,.75); }
 #dev-login h2 { margin:0; padding:8px 14px; background:var(--strip); color:#cfe5ff; font-size:12px; letter-spacing:.08em; }
@@ -162,7 +168,7 @@ window.onerror = function (msg, src, line) {
 };
 </script>
 <script src="lib/d3.min.js"></script>
-<script src="shim.js?v=6"></script>
+<script src="shim.js?v=7"></script>
 </head>
 <body>
 <div class="i8 vt">
@@ -191,6 +197,14 @@ window.onerror = function (msg, src, line) {
     <p class="dev-status" id="dev-status" role="status"></p>
     <p class="dev-last" id="dev-last"></p>
   </div>
+  <dialog id="dev-confirm" aria-labelledby="dev-confirm-h">
+    <h2 id="dev-confirm-h">ARE YOU SURE?</h2>
+    <form method="dialog">
+      <p id="dev-confirm-msg" style="margin:0;line-height:1.5"></p>
+      <p style="margin:0;color:var(--amber-hi);font-weight:700">⚠ This uses your Claude plan.</p>
+      <div style="display:flex;gap:8px"><button value="yes" class="dev-key" style="flex:1">YES, START</button><button value="no" class="dev-plain" autofocus>CANCEL</button></div>
+    </form>
+  </dialog>
   <dialog id="dev-login" aria-labelledby="dev-login-h">
     <h2 id="dev-login-h">DEVELOPER LOGIN</h2>
     <form id="dev-login-form">
@@ -994,6 +1008,6 @@ dash.onData(() => {
 })();
 })();
 </script>
-<script src="dev.js?v=7"></script>
+<script src="dev.js?v=8"></script>
 </body>
 </html>
