@@ -162,7 +162,7 @@ window.onerror = function (msg, src, line) {
 };
 </script>
 <script src="lib/d3.min.js"></script>
-<script src="shim.js?v=5"></script>
+<script src="shim.js?v=6"></script>
 </head>
 <body>
 <div class="i8 vt">
@@ -184,7 +184,8 @@ window.onerror = function (msg, src, line) {
   <div class="vt-status"><span id="vt-stat-car">BMW i8</span><span style="margin-left:auto">Sources: Classic.com · Old Cars Data · TrueCar · Autotrader · KBB · NHTSA</span></div>
 
   <div class="vt-dev" id="dev-bar" hidden>
-    <button type="button" class="dev-go" id="dev-refresh">⟳ REFRESH ALL</button>
+    <button type="button" class="dev-go" id="dev-news" title="Free: no Claude plan usage. Also runs every morning on its own.">⟳ NEWS &amp; RECALLS · FREE</button>
+    <button type="button" class="dev-key" id="dev-refresh" title="Uses your Claude plan">⟳ PRICES · USES PLAN</button>
     <form id="dev-add-form"><label for="dev-car" class="i8-muted" style="align-self:center">ADD CAR</label><input id="dev-car" placeholder="e.g. Porsche 718 Cayman GTS 4.0 2020-2023" maxlength="80" autocomplete="off"><button type="submit" class="dev-key" id="dev-add">ADD</button></form>
     <button type="button" class="dev-plain" id="dev-logout">LOG OUT</button>
     <p class="dev-status" id="dev-status" role="status"></p>
@@ -319,16 +320,16 @@ window.onerror = function (msg, src, line) {
       <li>Asking-price history before mid-2025 is not public without paid tools, and listings from mid-February to May 2026 could not be retrieved, so Chart 2 has a gap there.</li>
       <li>Most records do not say coupe or roadster. 2014–2017 cars are all coupes; 2019–2020 cars count as coupe or roadster only when the listing says so, so the Roadster filter shows almost nothing.</li>
       <li>Two early-2026 sales are listed as sold by one source and unsold at their high bid by another; their tooltips say so. Two sales far below every other (likely non-running or salvage) are shown but left out of every figure.</li>
-      <li>Collected Oct 9, 2026. The page does not refresh itself; ask Claude to refresh it.</li>
+      <li>News and recalls refresh automatically every day; prices refresh from the DEV tools.</li>
     </ul>
   </section>
   <section class="i8-card" id="sources-other" hidden>
     <h2>Sources and gaps</h2>
     <ul class="i8-src">
       <li>Completed US auction sales (Bring a Trailer, Cars &amp; Bids, PCARMARKET, Mecum) via <a href="https://www.classic.com/" target="_blank" rel="noopener">Classic.com</a> and <a href="https://oldcarsdata.com/" target="_blank" rel="noopener">Old Cars Data</a>; listings from Classic.com, Autotrader and dealer sites. Every sale and listing links to its source (turn on “Show each sale” and tap a dot).</li>
-      <li>Yearly medians are computed from the sales shown here (Old Cars Data's own medians mix generations), except the Elise, which uses Old Cars Data's yearly figures.</li>
+      <li>Yearly medians are computed from the sales shown here (Old Cars Data's own medians mix generations), except the i8, which uses Old Cars Data's yearly figures.</li>
       <li id="gap-note"></li>
-      <li>Collected Oct 9, 2026. The page does not refresh itself; ask Claude to refresh it.</li>
+      <li>News and recalls refresh automatically every day; prices refresh from the DEV tools.</li>
     </ul>
   </section>
   </div>
@@ -373,10 +374,10 @@ window.onerror = function (msg, src, line) {
     <h2>Best picks at about $60k</h2>
     <div class="i8-best">
       <div><span class="i8-muted">Attention / exotic look</span><b>Mercedes G550, 2016–18</b><p class="i8-muted">About $54k (KBB), about the same as an i8, and depreciates slowly. Runner-up: Audi R8 V8 (highest repair risk) or the i8 itself.</p></div>
-      <div><span class="i8-muted">Driving fun</span><b>Porsche Cayman GTS (981)</b><p class="i8-muted">Naturally aspirated six, manual, cheapest to insure on the list. Runner-up: 997.2 911 Carrera S.</p></div>
-      <div><span class="i8-muted">Holding value</span><b>Lotus Evora 400 / Elise</b><p class="i8-muted">Prices stable to rising. Runner-up: manual 911, Nissan GT-R.</p></div>
-      <div><span class="i8-muted">Daily use + speed</span><b>Corvette C8 Stingray, 2020–21</b><p class="i8-muted">2.8 s to 60, low miles, GM dealers everywhere, cheaper to insure than an i8. Runner-up: Macan GTS.</p></div>
-      <div><span class="i8-muted">Lowest risk</span><b>Corvette C8 Stingray</b><p class="i8-muted">Dealers everywhere, firm values, few big-ticket risks. The Lexus LX 600 is lower-risk still, but current asks are $77k+, above budget.</p></div>
+      <div><span class="i8-muted">Driving fun</span><b>Porsche Cayman GTS (981)</b><p class="i8-muted">Naturally aspirated six, manual, cheapest to insure on the list. Runner-up: Lotus Evora 400.</p></div>
+      <div><span class="i8-muted">Holding value</span><b>Lotus Evora 400</b><p class="i8-muted">Prices stable to rising. Runner-up: Nissan GT-R.</p></div>
+      <div><span class="i8-muted">Daily use + speed</span><b>Corvette C8 Stingray, 2020–21</b><p class="i8-muted">2.8 s to 60, low miles, GM dealers everywhere, cheaper to insure than an i8. Runner-up: Nissan GT-R.</p></div>
+      <div><span class="i8-muted">Lowest risk</span><b>Corvette C8 Stingray</b><p class="i8-muted">Dealers everywhere, firm values, few big-ticket risks.</p></div>
     </div>
     <p class="i8-take">The i8 wins on one thing: nothing else here has its spaceship look <b>and</b> ~28 mpg. But it is the <b>most expensive to insure</b> on the list and the only one that needs a $10k electrical repair fund. For turning heads every day, the real shortlist is <b>i8 vs G550 vs C8</b>.</p>
   </section>
@@ -393,9 +394,9 @@ window.onerror = function (msg, src, line) {
   <section class="i8-card">
     <h2>Notes by brand</h2>
     <ul class="i8-list">
-      <li><b>Porsche:</b> the 997.2 (2009–12) avoids the 997.1's IMS bearing and bore-scoring worries. Budget $2k–$3.5k a year plus big items (clutch $3k–$5k, PDK rebuild $4k–$8k) (<a href="https://www.tyrepress.com/2026/05/what-does-it-cost-to-maintain-a-porsche-long-term/" target="_blank" rel="noopener">Tyre Press</a>). 911 values are softening as 992 prices fall (<a href="https://rennpulse.beehiiv.com/p/the-992-just-hit-its-first-real-depreciation-curve-a-2020-carrera-s-cleared-68-500" target="_blank" rel="noopener">RennPulse</a>).</li>
+      <li><b>Porsche (Cayman GTS 981):</b> budget $2k–$3.5k a year plus big items (clutch $3k–$5k, PDK rebuild $4k–$8k) (<a href="https://www.tyrepress.com/2026/05/what-does-it-cost-to-maintain-a-porsche-long-term/" target="_blank" rel="noopener">Tyre Press</a>).</li>
       <li><b>G-Wagon:</b> only the old-body 2016–18 G550 fits; a 2019+ is about $83k (<a href="https://www.kbb.com/mercedes-benz/g-class/2019/depreciation" target="_blank" rel="noopener">KBB</a>). 13 mpg. Watch door seals, suspension bushings, transfer case noise (<a href="https://autoscore.pro/posts/mercedes-g-class-w463-reliability" target="_blank" rel="noopener">Autoscore</a>).</li>
-      <li><b>Lotus:</b> the Emira isn't a $60k car in the US yet (cheapest ask $88,995) and early builds had faults (<a href="https://www.pistonheads.com/news/ph-buying-guides/lotus-emira--ph-used-buying-guide/49652" target="_blank" rel="noopener">PistonHeads</a>). Elise values rose 55% over 3 years (<a href="https://www.hagerty.com/media/?p=302742" target="_blank" rel="noopener">Hagerty</a>). Service near Greenville is unconfirmed — call before buying.</li>
+      <li><b>Lotus:</b> the Emira isn't a $60k car in the US yet (cheapest ask $88,995) and early builds had faults (<a href="https://www.pistonheads.com/news/ph-buying-guides/lotus-emira--ph-used-buying-guide/49652" target="_blank" rel="noopener">PistonHeads</a>). Service near Greenville is unconfirmed — call before buying.</li>
       <li><b>Corvette C8:</b> early cars had valve-spring, transmission and no-start issues, mostly fixed under warranty; check the valve-spring bulletin on June–Sept 2020 builds (<a href="https://8020automotive.com/chevy-lt2-engine-problems/" target="_blank" rel="noopener">8020 Automotive</a>).</li>
       <li><b>Out of budget:</b> Lexus LC 500 ($76k+ asks), Lotus Emira ($89k+), Mercedes-AMG GT (~$72k+), Acura NSX (~$130k), G-Wagon 2019+ (~$83k).</li>
     </ul>
@@ -993,6 +994,6 @@ dash.onData(() => {
 })();
 })();
 </script>
-<script src="dev.js?v=6"></script>
+<script src="dev.js?v=7"></script>
 </body>
 </html>

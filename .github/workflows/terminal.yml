@@ -2,15 +2,17 @@
 # Claude (on the owner's Claude plan, via CLAUDE_CODE_OAUTH_TOKEN) researches into NEW/,
 # then tools/finish.py merges into data/ and only data/ is committed.
 name: terminal
-run-name: ${{ inputs.cmd }} ${{ inputs.car }}
+run-name: ${{ inputs.cmd || 'news (daily)' }} ${{ inputs.car }}
 on:
+  schedule:
+    - cron: '17 11 * * *'  # daily free news + recalls refresh (no Claude), ~7am Eastern
   workflow_dispatch:
     inputs:
       cmd:
-        description: refresh or add
+        description: news (free) / refresh (prices, uses Claude plan) / add / check
         required: true
         type: choice
-        options: [refresh, add, check]  # check: confirms the Claude plan key works, changes nothing
+        options: [news, refresh, add, check]  # check: confirms the Claude plan key works, changes nothing
       car:
         description: car to add (add only)
         required: false
@@ -30,12 +32,14 @@ jobs:
         with:
           persist-credentials: false  # Claude's step gets no push rights
       - uses: actions/setup-node@v4
+        if: (inputs.cmd || 'news') != 'news'
         with:
           node-version: 20
       - name: Research with Claude
+        if: (inputs.cmd || 'news') != 'news'
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          CMD: ${{ inputs.cmd }}
+          CMD: ${{ inputs.cmd || 'news' }}
           CAR: ${{ inputs.car }}
         run: |
           npm install -g @anthropic-ai/claude-code
@@ -43,7 +47,7 @@ jobs:
           if [ "$CMD" = "add" ]; then
             TASK="add the car: \"$CAR\" (follow the add command; pick its id, name and years yourself)"
           else
-            TASK="refresh all: for every car in data/car_profiles.json write retail.json, sold_sales.json (only sales newer than that car's latest date in data/sold_sales.json), kbb.json and news.json"
+            TASK="refresh all: for every car in data/car_profiles.json write retail.json, sold_sales.json (only sales newer than that car's latest date in data/sold_sales.json) and kbb.json. Do NOT research news or recalls: a free script handles those"
           fi
           claude -p "Vehicle Terminal data job. Read CLAUDE.md fully first and follow its rules, schema, site list and token rules.
           Task: $TASK.
@@ -53,10 +57,10 @@ jobs:
             --model sonnet --max-turns 250 \
             --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Task"
       - name: Merge, check and publish data
-        if: inputs.cmd != 'check'
+        if: (inputs.cmd || 'news') != 'check'
         env:
           GH_TOKEN: ${{ github.token }}
-          CMD: ${{ inputs.cmd }}
+          CMD: ${{ inputs.cmd || 'news' }}
           CAR: ${{ inputs.car }}
         run: |
           python3 tools/finish.py

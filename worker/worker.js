@@ -58,7 +58,7 @@ async function handle(req, env) {
 
   if (pathname === '/run' && req.method === 'POST') {
     const cmd = body.cmd, car = String(body.car || '').trim();
-    if (cmd !== 'refresh' && cmd !== 'add') return [400, { error: 'Unknown command' }];
+    if (!['news', 'refresh', 'add'].includes(cmd)) return [400, { error: 'Unknown command' }];
     if (cmd === 'add' && !CAR_RE.test(car)) return [400, { error: 'Type the car like: Porsche 718 Cayman GTS 4.0 2020-2023' }];
     const last = await latestRun(env);
     if (last && last.status !== 'completed') return [409, { error: 'A job is already running: ' + last.title }];

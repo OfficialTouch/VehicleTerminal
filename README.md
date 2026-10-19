@@ -1,6 +1,6 @@
 # Vehicle Terminal
 
-A Bloomberg-style terminal for used cars (Greenville, SC; ~$60k budget). Compares the BMW i8 with 10 other cars: sold and asking prices, a deal checker, recalls, news, sentiment, how each car is built (repair risk), and a buyer guide.
+A Bloomberg-style terminal for used cars (Greenville, SC; ~$60k budget). Compares the BMW i8 with 6 other cars: sold and asking prices, a deal checker, recalls, news, sentiment, how each car is built (repair risk), and a buyer guide.
 
 **Live site:** https://officialtouch.github.io/VehicleTerminal/
 
@@ -16,7 +16,7 @@ Keys: F1 Prices, F2 News & recalls, F3 Buyer guide, F4 Cars at $60k. The car, co
 - `CLAUDE.md`: how Claude adds cars, refreshes prices and scores a dealer quote.
 
 ## Updating
-On the site: tap **DEV LOGIN**, sign in, then **REFRESH ALL** (listings, sales, KBB values and news for every car) or type a car and tap **ADD**. The job runs on GitHub using your Claude plan and the site updates when it finishes (10–60 minutes).
+On the site: tap **DEV LOGIN**, sign in, then **NEWS & RECALLS · FREE** (no Claude; also runs every morning by itself), **PRICES · USES PLAN** (listings, auction sales and KBB values, using your Claude plan, 10–60 minutes), or type a car and tap **ADD** (uses your plan). The site updates when a job finishes.
 
 Or ask Claude directly: `add <car>`, `refresh`, or `deal <car> <year> <miles> <price>`. Claude edits `data/`, bumps `data/manifest.json` so phones reload the new data, and pushes. The site updates about a minute later.
 

@@ -18,6 +18,7 @@ let [s, d] = await call('/login', 'POST', { user: 'dev', pass: 'nope' }); assert
 [s, d] = await call('/run', 'POST', { cmd: 'add', car: '<script>' }, t); assert(s === 400, 'bad car rejected');
 [s, d] = await call('/run', 'POST', { cmd: 'rm -rf' }, t); assert(s === 400, 'bad cmd rejected');
 [s, d] = await call('/run', 'POST', { cmd: 'add', car: 'Porsche 718 Cayman GTS 4.0 2020-2023' }, t); assert(s === 200 && dispatched.inputs.car.startsWith('Porsche') && dispatched.ref === 'main', 'add dispatched');
+[s, d] = await call('/run', 'POST', { cmd: 'news' }, t); assert(s === 200 && dispatched.inputs.cmd === 'news', 'free news job dispatched');
 runs = [{ ...runs[0], status: 'in_progress' }];
 [s, d] = await call('/run', 'POST', { cmd: 'refresh' }, t); assert(s === 409, 'blocked while running');
 const r = await w.fetch(new Request('https://x/status', { method: 'OPTIONS', headers: { Origin: 'https://evil.com' } }), env); assert(r.headers.get('access-control-allow-origin') === 'https://officialtouch.github.io', 'cors locked');

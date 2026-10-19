@@ -24,7 +24,7 @@
     });
   }
   function say(msg, kind) { var s = $('dev-status'); s.textContent = msg; s.className = 'dev-status ' + (kind || ''); }
-  function busy(on) { $('dev-refresh').disabled = on; $('dev-add').disabled = on; $('dev-car').disabled = on; }
+  function busy(on) { $('dev-news').disabled = on; $('dev-refresh').disabled = on; $('dev-add').disabled = on; $('dev-car').disabled = on; }
 
   function show() {
     var on = !!token;
@@ -47,7 +47,7 @@
       var r = d.run;
       if (!r) { say('No jobs yet.'); busy(false); return; }
       if (r.status !== 'completed') {
-        say('Running: ' + r.title + ' (started ' + new Date(r.started).toLocaleTimeString() + '). This can take 10–60 minutes; you can close the page.', 'run');
+        say('Running: ' + r.title + ' (started ' + new Date(r.started).toLocaleTimeString() + '). News jobs take a few minutes; price and add-car jobs 10–60. You can close the page.', 'run');
         busy(true);
         if (!poll) poll = setInterval(status, 30000);
         return;
@@ -83,8 +83,9 @@
       token = d.token; store.set(token); $('dev-pass').value = ''; $('dev-login').close(); show();
     }).catch(function (err) { $('dev-login-err').textContent = err.message; }).then(function () { btn.disabled = false; });
   });
+  $('dev-news').addEventListener('click', function () { run('news'); }); // free: no Claude, a few minutes
   $('dev-refresh').addEventListener('click', function () {
-    if (confirm('Refresh listings, sales, KBB values and news for every car? This uses your Claude plan and can take up to an hour.')) run('refresh');
+    if (confirm('Refresh listings, auction sales and KBB values for every car? This uses your Claude plan and can take up to an hour. (News and recalls are refreshed free, separately.)')) run('refresh');
   });
   $('dev-add-form').addEventListener('submit', function (e) {
     e.preventDefault();

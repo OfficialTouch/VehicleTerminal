@@ -7,7 +7,8 @@ DATA, NEW = os.path.join(ROOT, 'data'), os.path.join(ROOT, 'NEW')
 FILES = ['sold_sales', 'sold_yearly', 'asking_listings', 'events', 'kbb_values', 'car_profiles']
 
 cars = [d for d in os.listdir(NEW) if os.path.isdir(os.path.join(NEW, d))] if os.path.isdir(NEW) else []
-if not cars:
+CMD = os.environ.get('CMD', '') or 'news'
+if not cars and CMD != 'news':
     sys.exit('Claude wrote no research output in NEW/')
 for d in cars:  # a broken JSON file fails the job before anything is touched
     for f in os.listdir(os.path.join(NEW, d)):
@@ -28,7 +29,13 @@ for d in cars:
         os.rename(rp, rp + '.skipped')
         notes.append(f'{d}: kept old listings (found {after}, had {before})')
 
-subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'merge.py'), DATA, NEW], check=True)
+if cars:
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'merge.py'), DATA, NEW], check=True)
+# free part (no Claude): new NHTSA recalls and news headlines for every car
+free = subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'free_refresh.py')], check=True, capture_output=True, text=True).stdout.strip()
+print(free)
+if free and free != 'No new recalls or headlines':
+    notes.append(free)
 
 D = {f: json.load(open(os.path.join(DATA, f + '.json'))) for f in FILES}
 for f, rows in D.items():
@@ -41,6 +48,6 @@ m_path = os.path.join(DATA, 'manifest.json')
 m = json.load(open(m_path))
 summary = '\n'.join(filter(None, [open(os.path.join(NEW, 'summary.txt')).read().strip()[:600] if os.path.exists(os.path.join(NEW, 'summary.txt')) else ''] + notes))
 m.update(v=m.get('v', 0) + 1, updated=datetime.date.today().isoformat(),
-         last_run={'cmd': os.environ.get('CMD', ''), 'car': os.environ.get('CAR', ''), 'at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC'), 'summary': summary})
+         last_run={'cmd': CMD, 'car': os.environ.get('CAR', ''), 'at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC'), 'summary': summary})
 json.dump(m, open(m_path, 'w'))
 print('manifest', m)
