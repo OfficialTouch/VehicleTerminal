@@ -20,18 +20,20 @@
     b.addEventListener('click', function () { set(card, card.classList.contains('vt-folded')); });
     h.addEventListener('click', function () { b.click(); }); // the whole strip works too
   });
-  ['prices', 'news', 'guide', 'alts'].forEach(function (t) {
-    var tab = document.getElementById('tab-' + t);
-    if (!tab) return;
-    var bar = document.createElement('div');
-    bar.className = 'vt-folds';
-    bar.innerHTML = '<button type="button" data-open="0">▸ COLLAPSE ALL</button><button type="button" data-open="1">▾ EXPAND ALL</button>';
-    bar.addEventListener('click', function (e) {
-      var o = e.target.getAttribute('data-open');
-      if (o === null) return;
-      cards.forEach(function (c) { if (tab.contains(c)) { c.classList.toggle('vt-folded', o === '0'); c.querySelector('.vt-fold').setAttribute('aria-expanded', String(o === '1')); } });
-      if (o === '1' && window.dash) window.dash.setParams({});
-    });
-    tab.insertBefore(bar, tab.firstChild);
+  // one icon-only pair in the function-key row; acts on whichever tab is showing
+  var bar = document.createElement('div');
+  bar.className = 'vt-folds';
+  bar.innerHTML = '<button type="button" data-open="0" aria-label="Collapse all panels" title="Collapse all">'
+    + '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 4l5 5 5-5M7 20l5-5 5 5"/></svg></button>'
+    + '<button type="button" data-open="1" aria-label="Expand all panels" title="Expand all">'
+    + '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M7 9l5-5 5 5M7 15l5 5 5-5"/></svg></button>';
+  bar.addEventListener('click', function (e) {
+    var btn = e.target.closest('button'); if (!btn) return;
+    var open = btn.getAttribute('data-open') === '1';
+    var tab = ['prices', 'news', 'guide', 'alts'].map(function (t) { return document.getElementById('tab-' + t); })
+      .filter(function (el) { return el && getComputedStyle(el).display !== 'none'; })[0];
+    cards.forEach(function (c) { if (tab && tab.contains(c)) { c.classList.toggle('vt-folded', !open); c.querySelector('.vt-fold').setAttribute('aria-expanded', String(open)); } });
+    if (open && window.dash) window.dash.setParams({});
   });
+  (document.querySelector('.vt-keyrow') || document.body).appendChild(bar);
 })();

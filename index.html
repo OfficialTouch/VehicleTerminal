@@ -131,6 +131,14 @@ html, body { margin:0; background:#000; }
 .vt button:focus-visible, .vt select:focus-visible, .vt input:focus-visible, .vt a:focus-visible { outline:2px solid #4da3ff; outline-offset:2px; }
 
 
+
+/* function keys + car pickers on one row */
+.vt > .vt-keyrow { margin:0 !important; display:flex; flex-wrap:wrap; gap:12px 20px; align-items:flex-end; padding:12px 16px; background:#070707; border-bottom:1px solid #222; }
+.vt .vt-keyrow .i8-tabs { padding:0; background:none; flex:0 1 auto; grid-template-columns:repeat(4, 150px); }
+.vt .vt-keyrow #car-bar { padding:0; background:none; border:0; flex:1 1 400px; }
+.vt .vt-keyrow #car-bar select { min-width:0; width:100%; }
+.vt .vt-keyrow #car-bar label { flex:1 1 180px; }
+@media (max-width: 700px) { .vt .vt-keyrow .i8-tabs { grid-template-columns:repeat(2, minmax(0, 1fr)); flex-basis:100%; } }
 /* frozen ticker + collapsible panels */
 .vt-tick { position:sticky; top:0; z-index:20; }
 .vt .i8-card { position:relative; }
@@ -141,8 +149,8 @@ html, body { margin:0; background:#000; }
 .vt .i8-card.vt-folded { padding-bottom:0; }
 .vt .i8-card.vt-folded > :not(:first-child):not(.vt-fold) { display:none !important; }
 .vt .i8-card.vt-folded > h2:first-child { margin-bottom:0; }
-.vt-folds { display:flex; gap:6px; justify-content:flex-end; }
-.vt-folds button { min-height:32px; padding:0 10px; background:#111; color:#cfe5ff; border:1px solid #2e3b55; border-bottom:2px solid #13213a; border-radius:3px; font:inherit; font-size:11px; font-weight:700; letter-spacing:.06em; cursor:pointer; }
+.vt-folds { display:flex; gap:6px; align-self:flex-end; }
+.vt-folds button { display:grid; place-items:center; width:44px; min-height:44px; padding:0; background:#111; color:#cfe5ff; border:1px solid #2e3b55; border-bottom:2px solid #13213a; border-radius:3px; font:inherit; font-size:11px; font-weight:700; letter-spacing:.06em; cursor:pointer; }
 .vt-folds button:hover { border-color:#4da3ff; }
 /* developer tools */
 .vt-devbtn { margin-left:auto; align-self:center; min-height:36px; padding:0 12px; background:#111; color:var(--amber); border:1px solid #3a3a3a; border-bottom:3px solid #000; border-radius:3px; font:inherit; font-size:12px; font-weight:700; letter-spacing:.08em; cursor:pointer; box-shadow:inset 0 1px 0 #2a2a2a, 0 2px 0 #000; }
@@ -182,7 +190,7 @@ window.onerror = function (msg, src, line) {
 };
 </script>
 <script src="lib/d3.min.js"></script>
-<script src="shim.js?v=8"></script>
+<script src="shim.js?v=9"></script>
 </head>
 <body>
 <div class="i8 vt">
@@ -192,6 +200,7 @@ window.onerror = function (msg, src, line) {
   </header>
 
   <div class="vt-tick" id="vt-tick" aria-label="Median auction sale, latest year vs prior year"></div>
+  <div class="vt-keyrow">
   <div class="i8-seg i8-tabs" role="group" aria-label="Page">
     <button data-tab="prices" title="Press F1" aria-keyshortcuts="F1" aria-pressed="true"><span class="k-row"><span class="k-f" aria-hidden="true">F1</span><span class="k-m">PRC</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">Prices</span><span class="k-h">sold, ask, deal</span></span></button><button data-tab="news" title="Press F2" aria-keyshortcuts="F2" aria-pressed="false"><span class="k-row"><span class="k-f" aria-hidden="true">F2</span><span class="k-m">NEWS</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">News &amp; recalls</span><span class="k-h">sentiment, build</span></span></button><button data-tab="guide" title="Press F3" aria-keyshortcuts="F3" aria-pressed="false"><span class="k-row"><span class="k-f" aria-hidden="true">F3</span><span class="k-m">GUIDE</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">Buyer guide</span><span class="k-h">costs, checklist</span></span></button><button data-tab="alts" title="Press F4" aria-keyshortcuts="F4" aria-pressed="false"><span class="k-row"><span class="k-f" aria-hidden="true">F4</span><span class="k-m">ALT</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">Cars at $60k</span><span class="k-h">head-to-head</span></span></button>
   </div>
@@ -199,6 +208,7 @@ window.onerror = function (msg, src, line) {
   <div class="i8-bar" id="car-bar">
     <label>Car<select id="car-a" data-source="car_profiles"></select></label>
     <label>Compare with (optional)<select id="car-b" data-source="car_profiles"><option value="">None</option></select></label>
+  </div>
   </div>
 
   <div class="vt-status"><span id="vt-stat-car">BMW i8</span><span style="margin-left:auto">Sources: Classic.com · Old Cars Data · TrueCar · Autotrader · KBB · NHTSA</span></div>
@@ -1023,6 +1033,6 @@ dash.onData(() => {
 })();
 </script>
 <script src="dev.js?v=8"></script>
-<script src="panes.js?v=1"></script>
+<script src="panes.js?v=2"></script>
 </body>
 </html>
