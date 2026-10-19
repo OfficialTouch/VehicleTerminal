@@ -10,7 +10,7 @@ on:
         description: refresh or add
         required: true
         type: choice
-        options: [refresh, add]
+        options: [refresh, add, check]  # check: confirms the Claude plan key works, changes nothing
       car:
         description: car to add (add only)
         required: false
@@ -39,6 +39,7 @@ jobs:
           CAR: ${{ inputs.car }}
         run: |
           npm install -g @anthropic-ai/claude-code
+          if [ "$CMD" = "check" ]; then claude -p "Reply with exactly: Claude plan key works" --max-turns 1; exit 0; fi
           if [ "$CMD" = "add" ]; then
             TASK="add the car: \"$CAR\" (follow the add command; pick its id, name and years yourself)"
           else
@@ -52,6 +53,7 @@ jobs:
             --model sonnet --max-turns 250 \
             --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Task"
       - name: Merge, check and publish data
+        if: inputs.cmd != 'check'
         env:
           GH_TOKEN: ${{ github.token }}
           CMD: ${{ inputs.cmd }}
