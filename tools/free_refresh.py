@@ -15,7 +15,7 @@ OUTLETS = ['car and driver', 'motortrend', 'road & track', 'road and track', 'ha
            'slashgear', 'topspeed', 'top speed', 'robb report', 'dupont registry', 'classic.com', 'bring a trailer',
            'carwow', 'whatcar', 'what car', 'autotrader', 'cars.com', 'cargurus', 'the autopian', 'rennlist', 'flatsixes',
            'corvetteforum', 'mbworld', 'gtrlife', 'carsales', 'drive.com.au']
-SKIP = ['for sale in', 'for sale:', 'gran turismo', 'assetto', 'iracing', 'forza', ' gt3', 'lego', 'hot wheels', 'diecast']
+SKIP = ['for sale', 'final fantasy', 'video game', 'gran turismo', 'assetto', 'iracing', 'forza', ' gt3', 'lego', 'hot wheels', 'diecast']
 
 
 def fetch(url):
