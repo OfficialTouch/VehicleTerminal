@@ -5,6 +5,7 @@ Static site (GitHub Pages, no build). Deployed from `main` at https://officialto
 Origin: a Claude Dashboard artifact. `index.html` still calls the dashboard's `dash` API (`dash.data`, `dash.calc`, `dash.onData`, `dash.params`, `dash.setParams`, `dash.colors`); `shim.js` re-implements it from `data/*.json`. Params (car, vs, body, years, dots) live in the URL hash. The page renders from data: **adding or refreshing a car means changing rows in `data/`, not the page.** Only touch `index.html` for a requested page change.
 
 ## Rules
+- Keep `[hidden] { display:none !important; }` in the head CSS: `.i8 { display:grid }` otherwise shows hidden tabs (the dashboard host used to supply this rule). When testing, check what's on screen (computed `display`), not the `.hidden` property.
 - Each inline `<script>` in `index.html` is wrapped in its own function; keep it that way (top-level `const` would clash).
 - After ANY change to `data/`, bump `v` in `data/manifest.json` (and `updated`). After ANY change to `index.html` or `shim.js`, bump `?v=N` on the `shim.js` tag in `index.html`. Otherwise phones keep old copies.
 - Commit as `OfficialTouch <abtouch01@gmail.com>`, end the message with `Co-Authored-By: Claude <noreply@anthropic.com>`. `git pull -q --rebase && git push -q`. Check deploy: `gh run list -L 3` (the `pages build and deployment` run for your commit must be `completed/success`).
