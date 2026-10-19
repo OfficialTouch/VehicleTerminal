@@ -130,7 +130,7 @@ html, body { margin:0; background:#000; }
 .vt button:focus-visible, .vt select:focus-visible, .vt input:focus-visible, .vt a:focus-visible { outline:2px solid #4da3ff; outline-offset:2px; }
 </style>
 <script src="lib/d3.min.js"></script>
-<script src="shim.js?v=1"></script>
+<script src="shim.js?v=2"></script>
 </head>
 <body>
 <div class="i8 vt">
@@ -447,7 +447,7 @@ dash.calc('gap', {
   fn: (asking_listings, sold_sales) => {
     const qk = (d) => `${d.slice(0, 4)} Q${Math.ceil(Number(d.slice(5, 7)) / 3)}`;
     const med = (a) => { a.sort((x, y) => x - y); return a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2; };
-    const group = (list) => list.reduce((m, r) => ((m[r.car + '|' + qk(r.date)] ||= []).push(Number(r.price)), m), {});
+    const group = (list) => list.reduce((m, r) => ((m[r.car + '|' + qk(r.date)] = m[r.car + '|' + qk(r.date)] || []).push(Number(r.price)), m), {});
     const a = group(asking_listings), s = group(sold_sales.filter((r) => !r.outlier));
     return Object.keys(a).filter((k) => s[k]).sort().map((k) => ({ key: k, car: k.split('|')[0], quarter: k.split('|')[1], ask_median: med(a[k]), sold_median: med(s[k]), gap: med(a[k]) / med(s[k]) - 1, ask_n: a[k].length, sold_n: s[k].length }));
   },
