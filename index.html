@@ -130,6 +130,20 @@ html, body { margin:0; background:#000; }
 .vt .i8-tip { color:#e8e8e8; }
 .vt button:focus-visible, .vt select:focus-visible, .vt input:focus-visible, .vt a:focus-visible { outline:2px solid #4da3ff; outline-offset:2px; }
 
+
+/* frozen ticker + collapsible panels */
+.vt-tick { position:sticky; top:0; z-index:20; }
+.vt .i8-card { position:relative; }
+.vt .i8-card > h2:first-child { cursor:pointer; padding-right:44px; user-select:none; }
+.vt-fold { position:absolute; top:0; right:0; width:40px; height:30px; background:transparent; border:0; color:#cfe5ff; font:inherit; font-size:14px; cursor:pointer; }
+.vt-fold::before { content:'▾'; }
+.vt-fold[aria-expanded="false"]::before { content:'▸'; }
+.vt .i8-card.vt-folded { padding-bottom:0; }
+.vt .i8-card.vt-folded > :not(:first-child):not(.vt-fold) { display:none !important; }
+.vt .i8-card.vt-folded > h2:first-child { margin-bottom:0; }
+.vt-folds { display:flex; gap:6px; justify-content:flex-end; }
+.vt-folds button { min-height:32px; padding:0 10px; background:#111; color:#cfe5ff; border:1px solid #2e3b55; border-bottom:2px solid #13213a; border-radius:3px; font:inherit; font-size:11px; font-weight:700; letter-spacing:.06em; cursor:pointer; }
+.vt-folds button:hover { border-color:#4da3ff; }
 /* developer tools */
 .vt-devbtn { margin-left:auto; align-self:center; min-height:36px; padding:0 12px; background:#111; color:var(--amber); border:1px solid #3a3a3a; border-bottom:3px solid #000; border-radius:3px; font:inherit; font-size:12px; font-weight:700; letter-spacing:.08em; cursor:pointer; box-shadow:inset 0 1px 0 #2a2a2a, 0 2px 0 #000; }
 .vt-devbtn[aria-expanded="true"] { color:#000; background:var(--color-ok); border-color:var(--color-ok); border-bottom-color:#137a3f; }
@@ -168,7 +182,7 @@ window.onerror = function (msg, src, line) {
 };
 </script>
 <script src="lib/d3.min.js"></script>
-<script src="shim.js?v=7"></script>
+<script src="shim.js?v=8"></script>
 </head>
 <body>
 <div class="i8 vt">
@@ -1009,5 +1023,6 @@ dash.onData(() => {
 })();
 </script>
 <script src="dev.js?v=8"></script>
+<script src="panes.js?v=1"></script>
 </body>
 </html>

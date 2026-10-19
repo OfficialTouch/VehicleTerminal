@@ -46,4 +46,6 @@ Per car use auction sales since 2024 (all if fewer than 8), excluding outliers a
 - Worker tests: `node worker/test.mjs`. Run a job by hand: `gh api -X POST repos/OfficialTouch/VehicleTerminal/actions/workflows/terminal.yml/dispatches -f ref=main -f 'inputs[cmd]=refresh'`.
 
 ## Look
+Panels: `panes.js` gives every card with a blue title strip a fold button (and makes the strip clickable) plus COLLAPSE ALL / EXPAND ALL per tab; expanding a chart re-runs `dash.setParams({})` so it redraws at full width. The ticker is sticky (frozen at the top). Anything that uses the Claude plan goes through the centered `#dev-confirm` box in dev.js (`sure()`), never `confirm()`.
+
 Bloomberg style: black, amber (`--amber`), yellow function keys (F1-F4 switch tabs; ignored while typing), blue panel title strips. Skin lives in the `.vt` CSS block at the top of `index.html`.
