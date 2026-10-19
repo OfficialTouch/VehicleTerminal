@@ -28,7 +28,7 @@ Origin: a Claude Dashboard artifact. `index.html` still calls the dashboard's `d
 
 ## Commands
 - `add <car> [years] [trim]`: pick id/name/years (ask one question only if the generation is ambiguous). Two agents write to `NEW/<id>/` (git-ignored scratch, outside the repo is fine): prices agent -> `sold_sales.json` (40-80 sales), `retail.json` (current listings from Classic.com, TrueCar, Autotrader, each with `source` and `vin`), `events.json`, `kbb.json`; profile agent -> `profile.json` incl. `build` (recalls via api.nhtsa.gov/recalls/recallsByVehicle?make=&model=&modelYear=, sentiment from owner ratings/forums/reviews; flag au7o.io costs as weak). Then `python3 tools/merge.py data NEW`, bump manifest, test, push. Tell the user: median sold, average ask, deal-checker sample size, repair difficulty, biggest caveat.
-- `refresh [car|all]`: one agent per 2-3 cars writes `retail.json` (ALL current listings), `sold_sales.json` (only sales newer than the car's latest), `kbb.json`. merge.py replaces each car's "For sale" rows, turns vanished ones into "Last asking", appends new sales without duplicates, recomputes yearly medians. Report listings added/gone per car and any new median.
+- `refresh [car|all]`: one agent per 2-3 cars writes `retail.json` (ALL current listings), `sold_sales.json` (only sales newer than the car's latest), `kbb.json`, and `news.json` = {headlines (4-8, newest first: keep still-relevant existing ones, add new, dedupe by url), recalls (the full current NHTSA list), recall_note}. merge.py replaces each car's "For sale" rows, turns vanished ones into "Last asking", appends new sales without duplicates, recomputes yearly medians. Report listings added/gone per car and any new median.
 - `deal <car> <year> <miles> <price>`: answer in chat with the math below. No research.
 
 ## Deal checker (the `deal_model` calc in index.html)
@@ -37,6 +37,11 @@ Per car use auction sales since 2024 (all if fewer than 8), excluding outliers a
 - `ln(price) = mY + b*(miles-mx) + c*(year-myr) + yoff[year]`; b, c from least squares; clamp b to [-2e-5, 0], c to [-0.1, 0.3]; yoff = sum of that year's residuals / (count + 3); s = residual SD, min 0.05.
 - pct = price/fair - 1: <= -10% Great deal; <= 0 Good; <= +10% Fair (normal dealer markup); <= +20% High, negotiate; above that Overpriced.
 - Also report the typical range fair*e^+-s, a target of fair to fair*1.05, the KBB fair price for that year, how many similar listings (+-1 yr, +-20k mi) ask less, and a caution if miles are outside the sales' range.
+
+## Site buttons (DEV LOGIN, REFRESH ALL, ADD CAR)
+- `dev.js` logs in against the Cloudflare Worker `worker/worker.js` (https://vehicle-terminal-api.abtouch01.workers.dev, deployed by Cloudflare Workers Builds from the `worker/` folder on every push). Worker secrets, set in the Cloudflare dashboard: `DEV_USER`, `DEV_PASS`, `GH_TOKEN` (fine-grained GitHub token: this repo, Actions read/write). Sessions last 7 days; changing the password logs everyone out.
+- The worker starts `.github/workflows/terminal.yml` (one job at a time). It installs Claude Code and runs it with the repo secret `CLAUDE_CODE_OAUTH_TOKEN` (the owner's Claude plan, from `claude setup-token`), model sonnet. Claude only writes `NEW/`; `tools/finish.py` then merges, refuses broken output, keeps old listings if a car's new listing count collapses, bumps the manifest and records `last_run` (shown in the dev bar). Only `data/` is committed.
+- Worker tests: `node worker/test.mjs`. Run a job by hand: `gh api -X POST repos/OfficialTouch/VehicleTerminal/actions/workflows/terminal.yml/dispatches -f ref=main -f 'inputs[cmd]=refresh'`.
 
 ## Look
 Bloomberg style: black, amber (`--amber`), yellow function keys (F1-F4 switch tabs; ignored while typing), blue panel title strips. Skin lives in the `.vt` CSS block at the top of `index.html`.

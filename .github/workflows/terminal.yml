@@ -1,0 +1,69 @@
+# Data job started by the site's REFRESH / ADD CAR buttons (through the Cloudflare Worker).
+# Claude (on the owner's Claude plan, via CLAUDE_CODE_OAUTH_TOKEN) researches into NEW/,
+# then tools/finish.py merges into data/ and only data/ is committed.
+name: terminal
+run-name: ${{ inputs.cmd }} ${{ inputs.car }}
+on:
+  workflow_dispatch:
+    inputs:
+      cmd:
+        description: refresh or add
+        required: true
+        type: choice
+        options: [refresh, add]
+      car:
+        description: car to add (add only)
+        required: false
+        default: ''
+concurrency:
+  group: terminal
+  cancel-in-progress: false
+permissions:
+  contents: write
+  pages: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false  # Claude's step gets no push rights
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Research with Claude
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CMD: ${{ inputs.cmd }}
+          CAR: ${{ inputs.car }}
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          if [ "$CMD" = "add" ]; then
+            TASK="add the car: \"$CAR\" (follow the add command; pick its id, name and years yourself)"
+          else
+            TASK="refresh all: for every car in data/car_profiles.json write retail.json, sold_sales.json (only sales newer than that car's latest date in data/sold_sales.json), kbb.json and news.json"
+          fi
+          claude -p "Vehicle Terminal data job. Read CLAUDE.md fully first and follow its rules, schema, site list and token rules.
+          Task: $TASK.
+          Write results ONLY as JSON files under NEW/<car-id>/ with the file names CLAUDE.md gives for this command. Do not edit data/, index.html or any other file, and do not run git: a later step merges, checks and publishes.
+          Use the Task tool for parallel research, one subagent per 2 cars, each writing its files to disk. Never invent numbers.
+          Last, write NEW/summary.txt: 2-4 short plain lines for the owner (what changed per car, any new median, the biggest caveat)." \
+            --model sonnet --max-turns 250 \
+            --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Task"
+      - name: Merge, check and publish data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CMD: ${{ inputs.cmd }}
+          CAR: ${{ inputs.car }}
+        run: |
+          python3 tools/finish.py
+          git config user.name "OfficialTouch"
+          git config user.email "abtouch01@gmail.com"
+          git add data
+          git diff --cached --quiet && { echo "No data changes"; exit 0; }
+          git commit -m "Data: $CMD $CAR"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          # pushes made with the workflow token may not start a Pages build on their own
+          curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages/builds" || echo "Pages build request failed (it may already be building)"

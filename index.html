@@ -129,6 +129,28 @@ html, body { margin:0; background:#000; }
 .vt .i8-best b { color:var(--amber-hi); }
 .vt .i8-tip { color:#e8e8e8; }
 .vt button:focus-visible, .vt select:focus-visible, .vt input:focus-visible, .vt a:focus-visible { outline:2px solid #4da3ff; outline-offset:2px; }
+
+/* developer tools */
+.vt-devbtn { margin-left:auto; align-self:center; min-height:36px; padding:0 12px; background:#111; color:var(--amber); border:1px solid #3a3a3a; border-bottom:3px solid #000; border-radius:3px; font:inherit; font-size:12px; font-weight:700; letter-spacing:.08em; cursor:pointer; box-shadow:inset 0 1px 0 #2a2a2a, 0 2px 0 #000; }
+.vt-devbtn[aria-expanded="true"] { color:#000; background:var(--color-ok); border-color:var(--color-ok); border-bottom-color:#137a3f; }
+.vt > .vt-dev { margin:0 !important; }
+.vt-dev { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:10px 16px; background:#0b0b0b; border-bottom:1px solid #222; font-size:12px; }
+.vt-dev form { display:flex; gap:6px; flex:1 1 320px; }
+.vt-dev input { flex:1; min-width:0; height:40px; padding:0 10px; background:#111; color:var(--amber-hi); border:1px solid #3a3a3a; border-bottom:2px solid var(--amber); font:inherit; }
+.vt-dev button, #dev-login button { min-height:40px; padding:0 14px; border:0; border-radius:3px; font:inherit; font-weight:700; letter-spacing:.06em; cursor:pointer; box-shadow:0 2px 0 #000; }
+.vt-dev button:disabled { opacity:.45; cursor:not-allowed; }
+.dev-go { background:#1f9d55; color:#000; box-shadow:inset 0 -3px 0 #137a3f, inset 0 1px 0 #5fe39a, 0 2px 0 #000 !important; }
+.dev-key { background:var(--key); color:#000; box-shadow:inset 0 -3px 0 #b38f00, inset 0 1px 0 #ffe27a, 0 2px 0 #000 !important; }
+.dev-plain { background:#111; color:#e8e8e8; border:1px solid #3a3a3a !important; }
+.dev-status { flex-basis:100%; margin:0; color:#bdbdbd; } .dev-status.ok { color:var(--color-ok); } .dev-status.bad { color:var(--color-bad); } .dev-status.run { color:var(--amber-hi); }
+.dev-last { flex-basis:100%; margin:0; color:#8a8a8a; font-size:11px; }
+#dev-login { background:#0b0b0b; color:#e8e8e8; border:1px solid var(--amber); padding:0; width:min(92vw, 360px); font-family:var(--font-anthropic-sans); }
+#dev-login::backdrop { background:rgba(0,0,0,.75); }
+#dev-login h2 { margin:0; padding:8px 14px; background:var(--strip); color:#cfe5ff; font-size:12px; letter-spacing:.08em; }
+#dev-login form { display:grid; gap:10px; padding:14px; }
+#dev-login label { display:grid; gap:4px; font-size:10px; letter-spacing:.08em; color:#8a8a8a; }
+#dev-login input { height:42px; padding:0 10px; background:#111; color:var(--amber-hi); border:1px solid #3a3a3a; border-bottom:2px solid var(--amber); font:inherit; font-size:15px; }
+#dev-login-err { color:var(--color-bad); min-height:1em; margin:0; font-size:12px; }
 </style>
 <script>
 // Shows any script error on the page itself (plain ES5 so it runs on every browser)
@@ -140,12 +162,12 @@ window.onerror = function (msg, src, line) {
 };
 </script>
 <script src="lib/d3.min.js"></script>
-<script src="shim.js?v=4"></script>
+<script src="shim.js?v=5"></script>
 </head>
 <body>
 <div class="i8 vt">
   <header id="top" class="vt-top">
-    <h1 id="page-title">Vehicle Terminal</h1><span class="vt-sub">US USED-CAR MKT · GREENVILLE SC · BUDGET $60K</span>
+    <h1 id="page-title">Vehicle Terminal</h1><span class="vt-sub">US USED-CAR MKT · GREENVILLE SC · BUDGET $60K</span><button type="button" id="dev-btn" class="vt-devbtn" aria-expanded="false">DEV LOGIN</button>
     <p class="i8-take">Auction prices went from a <b data-source="stats" data-field="value" data-where="metric=s_2021">—</b> median in <span data-source="stats" data-field="note" data-where="metric=s_base_year">—</span> to <b data-source="stats" data-field="value" data-where="metric=s_current">—</b> in <span data-source="stats" data-field="note" data-where="metric=s_cur_year">—</span>, and dealers are asking <b data-source="stats" data-field="value" data-where="metric=gap_latest">—</b> more than recent sales.</p>
   </header>
 
@@ -160,6 +182,23 @@ window.onerror = function (msg, src, line) {
   </div>
 
   <div class="vt-status"><span id="vt-stat-car">BMW i8</span><span style="margin-left:auto">Sources: Classic.com · Old Cars Data · TrueCar · Autotrader · KBB · NHTSA</span></div>
+
+  <div class="vt-dev" id="dev-bar" hidden>
+    <button type="button" class="dev-go" id="dev-refresh">⟳ REFRESH ALL</button>
+    <form id="dev-add-form"><label for="dev-car" class="i8-muted" style="align-self:center">ADD CAR</label><input id="dev-car" placeholder="e.g. Porsche 718 Cayman GTS 4.0 2020-2023" maxlength="80" autocomplete="off"><button type="submit" class="dev-key" id="dev-add">ADD</button></form>
+    <button type="button" class="dev-plain" id="dev-logout">LOG OUT</button>
+    <p class="dev-status" id="dev-status" role="status"></p>
+    <p class="dev-last" id="dev-last"></p>
+  </div>
+  <dialog id="dev-login" aria-labelledby="dev-login-h">
+    <h2 id="dev-login-h">DEVELOPER LOGIN</h2>
+    <form id="dev-login-form">
+      <label>USERNAME<input id="dev-user" autocomplete="username" required></label>
+      <label>PASSWORD<input id="dev-pass" type="password" autocomplete="current-password" required></label>
+      <p id="dev-login-err" role="alert"></p>
+      <div style="display:flex;gap:8px"><button type="submit" class="dev-go" id="dev-login-go" style="flex:1">LOG IN</button><button type="button" class="dev-plain" id="dev-cancel">CANCEL</button></div>
+    </form>
+  </dialog>
 
   <div id="tab-prices" class="i8">
   <div class="i8-controls" id="filters">
@@ -954,5 +993,6 @@ dash.onData(() => {
 })();
 })();
 </script>
+<script src="dev.js?v=5"></script>
 </body>
 </html>
