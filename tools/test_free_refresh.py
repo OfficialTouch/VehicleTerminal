@@ -5,7 +5,11 @@ import free_refresh as fr
 
 tmp = tempfile.mkdtemp()
 fr.PROFILES = os.path.join(tmp, 'car_profiles.json')
-shutil.copy(os.path.join(fr.ROOT, 'data', 'car_profiles.json'), fr.PROFILES)
+_P = json.load(open(os.path.join(fr.ROOT, 'data', 'car_profiles.json')))
+for _p in _P:  # start from researched content only, so the test doesn't depend on earlier daily runs
+    _p['headlines'] = [h for h in _p['headlines'] if not h.get('auto')]
+    _p['recalls'] = [r for r in _p['recalls'] if not r.get('auto')]
+json.dump(_P, open(fr.PROFILES, 'w'))
 
 RSS = '''<rss><channel>
 <item><title>BMW i8 values hit a new low - Hagerty</title><link>https://news.google.com/a1</link><pubDate>Fri, 16 Oct 2026 12:00:00 GMT</pubDate><source url="https://hagerty.com">Hagerty</source></item>
