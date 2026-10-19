@@ -129,8 +129,17 @@ html, body { margin:0; background:#000; }
 .vt .i8-tip { color:#e8e8e8; }
 .vt button:focus-visible, .vt select:focus-visible, .vt input:focus-visible, .vt a:focus-visible { outline:2px solid #4da3ff; outline-offset:2px; }
 </style>
+<script>
+// Shows any script error on the page itself (plain ES5 so it runs on every browser)
+window.onerror = function (msg, src, line) {
+  var p = document.createElement('p');
+  p.style.cssText = 'margin:8px;padding:10px;border:1px solid #ff6b6b;color:#ff6b6b;background:#000;font:13px monospace;white-space:pre-wrap';
+  p.textContent = 'Error: ' + msg + '\n' + (src || '').split('/').pop() + ' line ' + line + '\n' + navigator.userAgent;
+  (document.body || document.documentElement).insertBefore(p, (document.body || document.documentElement).firstChild);
+};
+</script>
 <script src="lib/d3.min.js"></script>
-<script src="shim.js?v=2"></script>
+<script src="shim.js?v=3"></script>
 </head>
 <body>
 <div class="i8 vt">
