@@ -1,0 +1,5 @@
+name = "vehicle-terminal-api"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+account_id = "2cd34740a1e413290e7eb5a9f1c9b268"
+workers_dev = true

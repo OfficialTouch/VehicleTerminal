@@ -1,4 +1,4 @@
-# usage: python3 tools/merge.py data NEW  — CUR (data/) has the 6 dataset files, NEW has <car>/{sold_sales,sold_yearly,asking_listings,retail,events,profile,build,kbb}.json (any subset)
+# usage: python3 tools/merge.py data NEW  — CUR (data/) has the 6 dataset files, NEW has <car>/{sold_sales,sold_yearly,asking_listings,retail,events,profile,build,news,kbb}.json (any subset)
 import json, os, re, sys, statistics as st
 CUR, NEW = sys.argv[1], sys.argv[2]
 F = {k: f'{CUR}/{k}.json' for k in ['sold_sales', 'sold_yearly', 'asking_listings', 'events', 'car_profiles', 'kbb_values']}
@@ -19,6 +19,7 @@ for car in sorted(os.listdir(NEW)):
     load = lambda n: json.load(open(f'{d}/{n}.json')) if os.path.exists(f'{d}/{n}.json') else None
     if (p := load('profile')): D['car_profiles'] = [x for x in D['car_profiles'] if x['id'] != car] + [{**p, 'id': car}]
     if (b := load('build')): D['car_profiles'] = [{**x, 'build': b} if x['id'] == car else x for x in D['car_profiles']]
+    if (n := load('news')): D['car_profiles'] = [{**x, **{f: n[f] for f in ('headlines', 'recalls', 'recall_note') if f in n}} if x['id'] == car else x for x in D['car_profiles']]
     if (k := load('kbb')): D['kbb_values'] = [x for x in D['kbb_values'] if x['car'] != car] + [{**r, 'car': car} for r in k]
     if (e := load('events')): D['events'] = [x for x in D['events'] if x['car'] != car] + [{**r, 'car': car, 'id': f"{car}:{r['id'].split(':')[-1]}", 'value': None} for r in e]
     if (s := load('sold_sales')):  # add new sales, skip exact repeats (same url+date+price)
