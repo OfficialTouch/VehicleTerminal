@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vehicle Terminal</title>
+<style>
+:root { --cds-gap-xs:4px; --cds-gap-sm:8px; --cds-gap-md:12px; --cds-gap-lg:16px; --cds-pad-xs:4px; --cds-pad-sm:8px; --cds-pad-md:12px; --cds-pad-lg:14px;
+  --cds-font-size-caption:12px; --cds-font-size-body:14px; --cds-font-size-heading:15px; --cds-font-size-title:22px; --cds-font-weight-medium:500;
+  --cds-shadow-popover:0 4px 12px rgba(0,0,0,.7); --cds-dur-slow:.3s; --cds-chart-grid:#222; --cds-chart-muted:#555; --cds-chart-reference:#888; }
+html, body { margin:0; background:#000; }
+</style>
+<style>
+.i8 { font-family: var(--font-anthropic-sans); display: grid; gap: var(--cds-gap-lg); }
+.i8 h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+.i8 h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.i8 h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+.i8 p { margin: 0; }
+.i8-muted { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.i8-take { color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); }
+.i8-take b, .i8 .i8-num b { font-weight: 600; color: var(--color-fg); }
+.i8-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: center; }
+.i8-seg { display: inline-flex; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
+.i8-seg button { font: inherit; font-size: var(--cds-font-size-caption); padding: var(--cds-pad-xs) var(--cds-pad-sm); background: transparent; color: var(--color-fg-muted); border: 0; cursor: pointer; }
+.i8-seg button[aria-pressed="true"] { background: var(--color-panel); color: var(--color-fg); font-weight: 600; }
+.i8-seg button + button { border-left: 1px solid var(--color-border-line); }
+.i8-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); min-width: 0; }
+.i8-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: var(--cds-gap-md); }
+.i8-tile { display: grid; gap: 2px; align-content: start; }
+.i8-big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; }
+.i8-up { color: var(--color-ok); } .i8-down { color: var(--color-bad); }
+.i8-chart { position: relative; min-height: 340px; }
+.i8-chart svg { display: block; }
+.i8-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.i8-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.i8-sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+.i8-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); max-width: 15rem; display: none; z-index: 2; }
+.i8-tip .d { color: var(--cds-text-secondary); }
+.i8-pin { font-size: var(--cds-font-size-caption); border-top: 1px solid var(--color-border-line); padding-top: var(--cds-gap-sm); }
+.i8-pin a { color: inherit; }
+.i8-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.i8-table th, .i8-table td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--color-border-line); }
+.i8-table th:first-child, .i8-table td:first-child { text-align: left; }
+.i8-table th { color: var(--color-fg-muted); font-weight: 500; }
+.i8-tool { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: end; }
+.i8-tool label { display: grid; gap: 4px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.i8-tool select, .i8-tool input { font: inherit; padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); width: 9rem; }
+.i8-out { display: grid; gap: var(--cds-gap-sm); }
+.i8-list { margin: 0; padding-left: 1.1rem; font-size: var(--cds-font-size-caption); display: grid; gap: 4px; }
+.i8-list a { color: inherit; }
+.i8-scroll { max-height: 26rem; overflow: auto; }
+.i8-sale th { position: sticky; top: 0; background: var(--color-panel); }
+.i8-sale td:nth-child(4), .i8-sale td:nth-child(5), .i8-sale th:nth-child(4), .i8-sale th:nth-child(5) { text-align: left; }
+.i8-sale a { color: inherit; font-weight: 600; }
+.i8-deal { color: var(--color-ok); font-weight: 600; }
+.i8-src { margin: 0; padding-left: 1.1rem; font-size: var(--cds-font-size-caption); display: grid; gap: 6px; color: var(--color-fg-muted); }
+.i8-src a { color: var(--color-fg); }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+[data-dash-source-state=empty] { color: transparent; }
+.i8-tabs { display: inline-flex; }
+.i8-tabs button { font-size: var(--cds-font-size-body); }
+.i8-best { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-md); }
+.i8-best div { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: grid; gap: 4px; align-content: start; }
+.i8-best b { font-size: var(--cds-font-size-body); }
+.i8-cmp td, .i8-cmp th { text-align: left !important; vertical-align: top; }
+.i8-cmp a, .i8-news a { color: var(--color-fg); }
+.i8-news td:first-child { white-space: nowrap; }
+.i8-bar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: end; }
+.i8-bar label { display: grid; gap: 4px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.i8-bar select { font: inherit; padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); min-width: 14rem; }
+.i8-verdict { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); }
+.i8-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--cds-gap-md); }
+.i8-warn { color: var(--color-warn); font-weight: 600; }
+.i8-bad { color: var(--color-bad); font-weight: 600; }
+
+/* ===== Vehicle Terminal: Bloomberg-style skin ===== */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap');
+.vt { --color-bg:#000; --color-panel:#000; --color-fg:#e8e8e8; --color-fg-muted:#9a9a9a; --color-border-line:#262626; --color-ok:#3ddc84; --color-bad:#ff6b6b; --color-warn:#ffd27a;
+  --cds-chart-axis:#444; --cds-surface-popover:#0d0d0d; --cds-border:#ffa028; --cds-text-secondary:#9a9a9a; --cds-radius:3px;
+  --font-anthropic-sans:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; --font-anthropic-serif:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --amber:#ffa028; --amber-hi:#ffd27a; --key:#f5c518; --strip:#13213a;
+  background:#000; color:var(--color-fg); padding:0 0 16px; gap:0 !important; }
+.vt > :not(.vt-top):not(.vt-tick):not(.i8-tabs):not(#car-bar):not(.vt-status) { margin:12px 16px 0; }
+.vt .i8 { gap:12px; }
+.vt a { color:var(--amber-hi); }
+.vt .i8-cmp a, .vt .i8-news a, .vt .i8-src a, .vt .i8-sale a, .vt .i8-list a, .vt .i8-pin a { color:var(--amber-hi); }
+.vt-top { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; padding:10px 16px; background:#0a0a0a; border-bottom:1px solid var(--amber); }
+.vt-top h1 { font-family:'IBM Plex Sans Condensed', var(--font-anthropic-sans) !important; font-weight:700 !important; font-size:22px !important; letter-spacing:.08em; color:var(--amber); text-transform:uppercase; }
+.vt-top .vt-sub { color:#8a8a8a; font-size:11px; letter-spacing:.06em; }
+.vt-top .i8-take { flex-basis:100%; font-size:12px; }
+.vt-top .i8-take b { color:var(--amber-hi); }
+.vt-tick { display:flex; overflow-x:auto; white-space:nowrap; background:#050505; border-bottom:1px solid #1c1c1c; font-size:12px; }
+.vt-tick > span { display:inline-flex; gap:8px; padding:7px 14px; border-right:1px solid #1c1c1c; }
+.vt-tick b { color:var(--amber); } .vt-tick i { font-style:normal; font-weight:600; }
+/* function keys (tabs) */
+.vt .i8-tabs { display:grid !important; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:6px; border:0 !important; border-radius:0; overflow:visible; padding:12px 16px; background:#070707; order:0; }
+.vt .i8-tabs button { display:flex; flex-direction:column; justify-content:space-between; gap:6px; min-height:60px; padding:7px 9px 8px; text-align:left; background:#111 !important; color:#e8e8e8 !important;
+  border:1px solid #2e2e2e !important; border-top-color:#3a3a3a !important; border-bottom:3px solid #000 !important; border-radius:3px; box-shadow:0 2px 0 #000; font-size:14px !important; }
+.vt .i8-tabs button[aria-pressed="true"] { background:#2a1a00 !important; border-color:var(--amber) !important; border-top-color:#ffc56b !important; border-bottom-color:var(--amber) !important; }
+.vt .i8-tabs button:hover { border-color:#5a5a5a !important; }
+.vt .k-row { display:flex; align-items:center; gap:6px; width:100%; }
+.vt .k-f { background:var(--key); color:#000; font-weight:700; font-size:10px; padding:1px 4px; border-radius:2px; box-shadow:inset 0 -2px 0 #b38f00; }
+.vt .k-m { color:var(--amber); font-weight:700; letter-spacing:.08em; font-size:13px; }
+.vt .k-led { margin-left:auto; width:7px; height:7px; border-radius:50%; background:#2a2a2a; box-shadow:0 0 0 1px #000; }
+.vt [aria-pressed="true"] .k-led { background:var(--color-ok); } .vt [aria-pressed="true"] .k-m { color:var(--amber-hi); }
+.vt .k-l { font-family:'IBM Plex Sans Condensed', var(--font-anthropic-sans); font-weight:600; font-size:14px; }
+.vt .k-h { color:#6f6f6f; font-size:10px; }
+/* car pickers */
+.vt #car-bar { padding:0 16px 12px; background:#070707; border-bottom:1px solid #222; gap:8px 12px; }
+.vt .i8-bar label, .vt .i8-tool label { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#8a8a8a; }
+.vt .i8-bar select, .vt .i8-tool select, .vt .i8-tool input { height:44px; background:#111; color:var(--amber-hi); border:1px solid #3a3a3a; border-bottom:2px solid var(--amber); font-weight:600; box-shadow:inset 0 1px 0 #2a2a2a; }
+.vt #car-a { border-color:var(--amber); } .vt #car-b { color:#cfe5ff; border-bottom-color:#4da3ff; }
+.vt-status { display:flex; flex-wrap:wrap; gap:4px 16px; padding:6px 16px; background:var(--amber); color:#000; font-weight:600; font-size:12px; text-transform:uppercase; }
+/* segmented controls -> keys */
+.vt .i8-seg:not(.i8-tabs) { gap:4px; border:0; border-radius:0; overflow:visible; }
+.vt .i8-seg:not(.i8-tabs) button { min-height:36px; padding:0 12px; background:#111; color:#cfcfcf; border:1px solid #333 !important; border-bottom:3px solid #000 !important; border-radius:3px; box-shadow:inset 0 1px 0 #2a2a2a, 0 2px 0 #000; letter-spacing:.04em; }
+.vt .i8-seg:not(.i8-tabs) button[aria-pressed="true"] { background:var(--key); color:#000; border-color:var(--key) !important; border-bottom-color:#b38f00 !important; box-shadow:inset 0 1px 0 #ffe27a, 0 2px 0 #000; }
+/* panels */
+.vt .i8-card { background:#000; border:1px solid #262626; border-radius:0; padding:0 12px 12px; }
+.vt .i8-card > h2:first-child { margin:0 -12px 4px; padding:6px 12px; background:var(--strip); color:#cfe5ff; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+.vt .i8-card > :first-child:not(h2) { margin-top:12px; }
+.vt .i8-big, .vt .i8-verdict { color:var(--amber-hi); font-weight:600; }
+.vt .i8-table th { color:#8a8a8a; background:#0a0a0a; text-transform:uppercase; font-size:11px; letter-spacing:.04em; }
+.vt .i8-table td { border-bottom-color:#161616; }
+.vt .i8-table tbody tr:hover td { background:#1a1000; }
+.vt .i8-sale th { background:#0a0a0a; }
+.vt .i8-best div { background:#0a0a0a; border-color:#2e2e2e; border-top:2px solid var(--amber); }
+.vt .i8-best b { color:var(--amber-hi); }
+.vt .i8-tip { color:#e8e8e8; }
+.vt button:focus-visible, .vt select:focus-visible, .vt input:focus-visible, .vt a:focus-visible { outline:2px solid #4da3ff; outline-offset:2px; }
+</style>
+<script src="lib/d3.min.js"></script>
+<script src="shim.js?v=1"></script>
+</head>
+<body>
+<div class="i8 vt">
+  <header id="top" class="vt-top">
+    <h1 id="page-title">Vehicle Terminal</h1><span class="vt-sub">US USED-CAR MKT · GREENVILLE SC · BUDGET $60K</span>
+    <p class="i8-take">Auction prices went from a <b data-source="stats" data-field="value" data-where="metric=s_2021">—</b> median in <span data-source="stats" data-field="note" data-where="metric=s_base_year">—</span> to <b data-source="stats" data-field="value" data-where="metric=s_current">—</b> in <span data-source="stats" data-field="note" data-where="metric=s_cur_year">—</span>, and dealers are asking <b data-source="stats" data-field="value" data-where="metric=gap_latest">—</b> more than recent sales.</p>
+  </header>
+
+  <div class="vt-tick" id="vt-tick" aria-label="Median auction sale, latest year vs prior year"></div>
+  <div class="i8-seg i8-tabs" role="group" aria-label="Page">
+    <button data-tab="prices" title="Press F1" aria-keyshortcuts="F1" aria-pressed="true"><span class="k-row"><span class="k-f" aria-hidden="true">F1</span><span class="k-m">PRC</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">Prices</span><span class="k-h">sold, ask, deal</span></span></button><button data-tab="news" title="Press F2" aria-keyshortcuts="F2" aria-pressed="false"><span class="k-row"><span class="k-f" aria-hidden="true">F2</span><span class="k-m">NEWS</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">News &amp; recalls</span><span class="k-h">sentiment, build</span></span></button><button data-tab="guide" title="Press F3" aria-keyshortcuts="F3" aria-pressed="false"><span class="k-row"><span class="k-f" aria-hidden="true">F3</span><span class="k-m">GUIDE</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">Buyer guide</span><span class="k-h">costs, checklist</span></span></button><button data-tab="alts" title="Press F4" aria-keyshortcuts="F4" aria-pressed="false"><span class="k-row"><span class="k-f" aria-hidden="true">F4</span><span class="k-m">ALT</span><span class="k-led"></span></span><span class="k-row"><span class="k-l">Cars at $60k</span><span class="k-h">head-to-head</span></span></button>
+  </div>
+
+  <div class="i8-bar" id="car-bar">
+    <label>Car<select id="car-a" data-source="car_profiles"></select></label>
+    <label>Compare with (optional)<select id="car-b" data-source="car_profiles"><option value="">None</option></select></label>
+  </div>
+
+  <div class="vt-status"><span id="vt-stat-car">BMW i8</span><span style="margin-left:auto">Sources: Classic.com · Old Cars Data · TrueCar · Autotrader · KBB · NHTSA</span></div>
+
+  <div id="tab-prices" class="i8">
+  <div class="i8-controls" id="filters">
+    <div class="i8-seg i8-only" role="group" aria-label="Body style" data-param="body">
+      <button data-v="all">All bodies</button><button data-v="coupe">Coupe</button><button data-v="roadster">Roadster</button>
+    </div>
+    <div class="i8-seg i8-only" role="group" aria-label="Model years" data-param="years">
+      <button data-v="all">All years</button><button data-v="2014-2017">2014–2017</button><button data-v="2018-2020">2018–2020</button>
+    </div>
+    <div class="i8-seg" role="group" aria-label="Chart view" data-param="dots">
+      <button data-v="off">Lines only</button><button data-v="on">Show each sale</button>
+    </div>
+  </div>
+
+  <section class="i8-card" id="deal">
+    <h2>Deal checker · Is this quote good?</h2>
+    <p class="i8-muted">Enter what the seller is asking. Fair value is predicted from this car's recent auction sales, adjusted for mileage, model year and how prices have moved since each sale.</p>
+    <div class="i8-tool">
+      <label>Model year<select id="d-year"></select></label>
+      <label>Miles<input id="d-miles" type="number" min="0" step="1000" inputmode="numeric" value="40000"></label>
+      <label>Asking price ($)<input id="d-price" type="number" min="0" step="500" inputmode="numeric" value="50000"></label>
+    </div>
+    <div class="i8-out" id="d-out" data-source="deal_model asking_listings kbb_values"></div>
+  </section>
+
+  <section class="i8-card" id="stats">
+    <h2>Sold prices (auctions)</h2>
+    <p class="i8-muted">All model years in scope. Yearly figures are medians of completed US auction sales.</p>
+    <div class="i8-tiles">
+      <div class="i8-tile"><span class="i8-muted">Current median</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=s_current">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=s_current">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">All-time high</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=s_high">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=s_high">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">All-time low</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=s_low">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=s_low">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">1-year change</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=s_1y">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=s_1y">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">5-year change</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=s_5y">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=s_5y">—</span></div>
+    </div>
+    <h2 style="margin-top:var(--cds-gap-md)">Asking prices (dealer listings)</h2>
+    <p class="i8-muted">US listings tracked by Classic.com. Asking prices are not what cars sell for.</p>
+    <div class="i8-tiles">
+      <div class="i8-tile"><span class="i8-muted">Current average ask</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=a_current">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=a_current">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">Highest ask now</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=a_high">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=a_high">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">Lowest ask now</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=a_low">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=a_low">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">1-year change</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=a_1y">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=a_1y">—</span></div>
+      <div class="i8-tile"><span class="i8-muted">5-year change</span><span class="i8-big" data-source="stats" data-field="value" data-where="metric=a_5y">—</span><span class="i8-muted" data-source="stats" data-field="note" data-where="metric=a_5y">—</span></div>
+    </div>
+  </section>
+
+  <section class="i8-card" id="sold-card">
+    <h2>Chart 1 · Sold prices over time</h2>
+    <p class="i8-muted">Yearly median with its middle-50% band, a quarterly median from individual sales, and every sale as a dot. Turn on “Show each sale” to see every sale and tap one for its source.</p>
+    <p class="i8-muted" id="sold-filter-note"></p>
+    <div class="i8-legend" id="sold-legend"></div>
+    <div class="i8-chart" id="sold-chart" data-source="sold_yearly sold_sales events fair_band"></div>
+    <div class="i8-pin" id="sold-pin" hidden></div>
+  </section>
+
+  <section class="i8-card" id="ask-card">
+    <h2>Chart 2 · Asking prices over time</h2>
+    <p class="i8-muted">Each dealer listing as a dot (filled: still for sale; hollow: sold or removed), the monthly median ask, and the quarterly median sale price for comparison.</p>
+    <div class="i8-legend" id="ask-legend"></div>
+    <div class="i8-chart" id="ask-chart" data-source="asking_listings sold_sales fair_band"></div>
+    <div class="i8-pin" id="ask-pin" hidden></div>
+    <h3>Asking vs. sold, by quarter</h3>
+    <table class="i8-table" id="gap-table" data-source="gap" data-row-key="key">
+      <thead><tr><th data-field="quarter">Quarter</th><th data-field="ask_median">Median ask</th><th data-field="sold_median">Median sale</th><th data-field="gap">Gap</th><th data-field="ask_n">Asks</th><th data-field="sold_n">Sales</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="i8-card" id="for-sale">
+    <h2>Cars for sale now</h2>
+    <p class="i8-muted">Listings from Classic.com, Autotrader, TrueCar and Carvana, merged so a car on several sites shows once (matched by VIN, or by price and miles). Cheapest first. "Deal" is the ask vs. the deal checker's fair value for that car's year and miles. Listings can sell at any time.</p>
+    <div class="i8-tool">
+      <label>Year (min)<select id="s-year"><option value="">Any</option></select></label>
+      <label>Max mileage<input id="s-miles" type="number" min="0" step="5000" inputmode="numeric" placeholder="Any"></label>
+      <label>Site<select id="s-src"><option value="">All sites</option><option>Classic.com</option><option>Autotrader</option><option>TrueCar</option><option>Carvana</option></select></label>
+    </div>
+    <p class="i8-muted" id="s-count"></p>
+    <div class="i8-scroll">
+      <table class="i8-table i8-sale" id="sale-table" data-source="asking_listings" data-row-key="url">
+        <thead><tr><th data-field="price">Ask</th><th data-source="deal_model">Deal</th><th data-field="year">Year</th><th data-field="miles">Miles</th><th data-field="location">Location</th><th data-field="seller">Dealer</th><th data-field="sources">Seen on</th><th>Listing</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="i8-card" id="buyer">
+    <h2>Buyer tools · Is this a good price?</h2>
+    <p class="i8-muted">Pick a model year and a mileage cap. The range is the middle 50% of matching auction sales since Oct 2025 (min–max when there are fewer than four). The shaded band on both charts is the same range for the filters above.</p>
+    <div class="i8-tool">
+      <label>Model year<select id="b-year"></select></label>
+      <label>Max mileage<input id="b-miles" type="number" min="0" step="5000" inputmode="numeric"></label>
+    </div>
+    <div class="i8-out" id="b-out" data-source="sold_sales asking_listings"></div>
+  </section>
+
+  <section class="i8-card" id="timing">
+    <h2>Best time to buy?</h2>
+    <p class="i8-muted">Each sale compared with that year's median, grouped by quarter of the year. This removes the long slide in prices so only the season is left.</p>
+    <p id="t-text" data-source="seasonal"></p>
+    <table class="i8-table" id="season-table" data-source="seasonal" data-row-key="key">
+      <thead><tr><th data-field="quarter">Quarter</th><th data-field="index">vs. year median</th><th data-field="n">Sales</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="i8-card i8-only" id="sources">
+    <h2>Sources and gaps</h2>
+    <ul class="i8-src">
+      <li><a href="https://oldcarsdata.com/bmw/i8/price-history" target="_blank" rel="noopener">Old Cars Data, i8 price history</a>: yearly medians of completed US auctions (Bring a Trailer, Cars &amp; Bids, Mecum and others), plus per-model-year sale lists.</li>
+      <li><a href="https://www.classic.com/m/bmw/i8/" target="_blank" rel="noopener">Classic.com, i8 market</a>: dated auction results and dealer listings, including last asking prices of cars that sold or were pulled.</li>
+      <li><a href="https://www.wardsauto.com/news/used-vehicle-prices-remain-elevated/798585/" target="_blank" rel="noopener">WardsAuto on the Manheim index</a> and <a href="https://www.coxautoinc.com/insights-hub/used-vehicle-wholesale-values-retreat-in-2022/" target="_blank" rel="noopener">Cox Automotive</a>: the industry-wide used-car boom and correction.</li>
+      <li><a href="https://insideevs.com/news/322832/bmw-i8-concours-delegance-edition-sells-for-825000-at-auction/about:blank" target="_blank" rel="noopener">InsideEVs</a> (record sale), <a href="https://consumerguide.com/bmw/2019-i8" target="_blank" rel="noopener">Consumer Guide</a> (facelift).</li>
+    </ul>
+    <h3>Where data is thin</h3>
+    <ul class="i8-src">
+      <li>Before 2021, only a handful of public auction sales exist each year, and none in 2018. Those yearly medians are shown hollow and dashed; treat them as rough.</li>
+      <li>Individual sale records only go back to late 2021, and most are from 2024 on. Private-party and dealer sale prices are not public.</li>
+      <li>Asking-price history before mid-2025 is not public without paid tools, and listings from mid-February to May 2026 could not be retrieved, so Chart 2 has a gap there.</li>
+      <li>Most records do not say coupe or roadster. 2014–2017 cars are all coupes; 2019–2020 cars count as coupe or roadster only when the listing says so, so the Roadster filter shows almost nothing.</li>
+      <li>Two early-2026 sales are listed as sold by one source and unsold at their high bid by another; their tooltips say so. Two sales far below every other (likely non-running or salvage) are shown but left out of every figure.</li>
+      <li>Collected Oct 9, 2026. The page does not refresh itself; ask Claude to refresh it.</li>
+    </ul>
+  </section>
+  <section class="i8-card" id="sources-other" hidden>
+    <h2>Sources and gaps</h2>
+    <ul class="i8-src">
+      <li>Completed US auction sales (Bring a Trailer, Cars &amp; Bids, PCARMARKET, Mecum) via <a href="https://www.classic.com/" target="_blank" rel="noopener">Classic.com</a> and <a href="https://oldcarsdata.com/" target="_blank" rel="noopener">Old Cars Data</a>; listings from Classic.com, Autotrader and dealer sites. Every sale and listing links to its source (turn on “Show each sale” and tap a dot).</li>
+      <li>Yearly medians are computed from the sales shown here (Old Cars Data's own medians mix generations), except the Elise, which uses Old Cars Data's yearly figures.</li>
+      <li id="gap-note"></li>
+      <li>Collected Oct 9, 2026. The page does not refresh itself; ask Claude to refresh it.</li>
+    </ul>
+  </section>
+  </div>
+
+  <div id="tab-news" class="i8" hidden data-source="car_profiles">
+  <section class="i8-card" id="cmp-card" hidden>
+    <h2 id="cmp-title">—</h2>
+    <p class="i8-take" id="cmp-vs"></p>
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th></th><th id="cmp-a">—</th><th id="cmp-b">—</th></tr></thead><tbody id="cmp-rows"></tbody></table></div>
+  </section>
+  <section class="i8-card"><h2 id="n-title">Which one to buy?</h2><div class="i8-best" id="n-picks"></div></section>
+  <section class="i8-card"><h2>Compare model years</h2>
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th>Year</th><th>Changes</th><th>Specs</th><th>Recalls</th><th>Median sold since 2025</th><th>KBB fair price</th><th>For sale now</th></tr></thead><tbody id="n-years"></tbody></table></div>
+    <p class="i8-muted">Median sold and for-sale counts come from this page's sales and listings; KBB is its national "Good condition, typical miles" dealer price.</p></section>
+  <section class="i8-card"><h2>Recalls (NHTSA)</h2><p class="i8-muted" id="n-recnote"></p>
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th>Filed</th><th>Campaign</th><th>Years</th><th>What can go wrong</th></tr></thead><tbody id="n-recalls"></tbody></table></div></section>
+  <section class="i8-card"><h2>Sentiment</h2><p class="i8-take" id="n-sentsum"></p>
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th>Source</th><th>Who</th><th>Rating</th><th>Gist</th></tr></thead><tbody id="n-sentiment"></tbody></table></div></section>
+  <section class="i8-card"><h2>Known issues to check</h2>
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th>Issue</th><th>Cost</th><th>Source</th></tr></thead><tbody id="n-issues"></tbody></table></div></section>
+  <section class="i8-card"><h2>How it's built: repair difficulty <span class="i8-muted" id="n-brate"></span></h2><p class="i8-muted" id="n-blayout"></p><p class="i8-take" id="n-bsum"></p>
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th>Job</th><th>Why the build matters</th><th>Cost</th><th>Source</th></tr></thead><tbody id="n-build"></tbody></table></div></section>
+  <section class="i8-card"><h2>Headlines</h2>
+    <div class="i8-scroll"><table class="i8-table i8-cmp i8-news"><thead><tr><th>Date</th><th>Headline</th></tr></thead><tbody id="n-news"></tbody></table></div></section>
+  </div>
+
+  <div id="tab-guide" class="i8" hidden data-source="car_profiles">
+  <section class="i8-card"><h2>Verdict</h2><div class="i8-two"><div><h3 id="g-a">—</h3><p class="i8-take" id="g-verdict"></p></div><div id="g-bwrap" hidden><h3 id="g-b">—</h3><p class="i8-take" id="g-verdict-b"></p></div></div></section>
+  <section class="i8-card"><h2>Yearly running cost</h2><div class="i8-two">
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th>Item</th><th>Per year</th><th>Basis</th></tr></thead><tbody id="g-costs"></tbody></table></div>
+    <div class="i8-scroll" id="g-costs-bwrap" hidden><table class="i8-table i8-cmp"><thead><tr><th>Item</th><th>Per year</th><th>Basis</th></tr></thead><tbody id="g-costs-b"></tbody></table></div></div>
+    <h3>Big repair risks</h3><ul class="i8-list" id="g-repairs"></ul></section>
+  <section class="i8-card"><h2>Warranty left</h2><ul class="i8-list" id="g-warranty"></ul></section>
+  <section class="i8-card"><h2>Pre-purchase checklist</h2><p class="i8-muted" id="g-service"></p>
+    <div class="i8-scroll"><table class="i8-table i8-cmp"><thead><tr><th>Check</th><th>Why</th></tr></thead><tbody id="g-check"></tbody></table></div>
+    <h3>Walk away if</h3><ul class="i8-list" id="g-walk"></ul></section>
+  <section class="i8-card"><h2>Still unknown</h2><ul class="i8-list" id="g-unknown"></ul></section>
+  </div>
+
+  <div id="tab-alts" class="i8" hidden>
+  <section class="i8-card">
+    <h2>Best picks at about $60k</h2>
+    <div class="i8-best">
+      <div><span class="i8-muted">Attention / exotic look</span><b>Mercedes G550, 2016–18</b><p class="i8-muted">About $54k (KBB), about the same as an i8, and depreciates slowly. Runner-up: Audi R8 V8 (highest repair risk) or the i8 itself.</p></div>
+      <div><span class="i8-muted">Driving fun</span><b>Porsche Cayman GTS (981)</b><p class="i8-muted">Naturally aspirated six, manual, cheapest to insure on the list. Runner-up: 997.2 911 Carrera S.</p></div>
+      <div><span class="i8-muted">Holding value</span><b>Lotus Evora 400 / Elise</b><p class="i8-muted">Prices stable to rising. Runner-up: manual 911, Nissan GT-R.</p></div>
+      <div><span class="i8-muted">Daily use + speed</span><b>Corvette C8 Stingray, 2020–21</b><p class="i8-muted">2.8 s to 60, low miles, GM dealers everywhere, cheaper to insure than an i8. Runner-up: Macan GTS.</p></div>
+      <div><span class="i8-muted">Lowest risk</span><b>Corvette C8 Stingray</b><p class="i8-muted">Dealers everywhere, firm values, few big-ticket risks. The Lexus LX 600 is lower-risk still, but current asks are $77k+, above budget.</p></div>
+    </div>
+    <p class="i8-take">The i8 wins on one thing: nothing else here has its spaceship look <b>and</b> ~28 mpg. But it is the <b>most expensive to insure</b> on the list and the only one that needs a $10k electrical repair fund. For turning heads every day, the real shortlist is <b>i8 vs G550 vs C8</b>.</p>
+  </section>
+
+  <section class="i8-card">
+    <h2>Head-to-head</h2>
+    <div class="i8-scroll"><table class="i8-table i8-cmp">
+      <thead><tr><th>Car</th><th>What ~$60k gets</th><th>hp</th><th>0–60 (tested)</th><th>Insurance/yr</th><th>Value trend</th><th>Risk</th><th>Photos</th></tr></thead>
+      <tbody id="h2h" data-source="car_profiles"></tbody>
+    </table></div>
+    <p class="i8-muted"><b>Sold</b> = completed auction sales; <b>benchmark</b> = Classic.com market estimate; <b>KBB</b> = Kelley Blue Book; <b>ask</b> = dealer list price (usually above what cars sell for). 0–60 from <a href="https://www.0-60specs.com/" target="_blank" rel="noopener">0-60specs</a> (magazine tests). Insurance: <a href="https://www.thezebra.com/auto-insurance/vehicles/bmw/i8/" target="_blank" rel="noopener">The Zebra</a> national average, full coverage, 30-year-old male, all trims, so fast versions likely cost more; "—" = not found. Risk is a judgment call from repair data.</p>
+  </section>
+
+  <section class="i8-card">
+    <h2>Notes by brand</h2>
+    <ul class="i8-list">
+      <li><b>Porsche:</b> the 997.2 (2009–12) avoids the 997.1's IMS bearing and bore-scoring worries. Budget $2k–$3.5k a year plus big items (clutch $3k–$5k, PDK rebuild $4k–$8k) (<a href="https://www.tyrepress.com/2026/05/what-does-it-cost-to-maintain-a-porsche-long-term/" target="_blank" rel="noopener">Tyre Press</a>). 911 values are softening as 992 prices fall (<a href="https://rennpulse.beehiiv.com/p/the-992-just-hit-its-first-real-depreciation-curve-a-2020-carrera-s-cleared-68-500" target="_blank" rel="noopener">RennPulse</a>).</li>
+      <li><b>G-Wagon:</b> only the old-body 2016–18 G550 fits; a 2019+ is about $83k (<a href="https://www.kbb.com/mercedes-benz/g-class/2019/depreciation" target="_blank" rel="noopener">KBB</a>). 13 mpg. Watch door seals, suspension bushings, transfer case noise (<a href="https://autoscore.pro/posts/mercedes-g-class-w463-reliability" target="_blank" rel="noopener">Autoscore</a>).</li>
+      <li><b>Lotus:</b> the Emira isn't a $60k car in the US yet (cheapest ask $88,995) and early builds had faults (<a href="https://www.pistonheads.com/news/ph-buying-guides/lotus-emira--ph-used-buying-guide/49652" target="_blank" rel="noopener">PistonHeads</a>). Elise values rose 55% over 3 years (<a href="https://www.hagerty.com/media/?p=302742" target="_blank" rel="noopener">Hagerty</a>). Service near Greenville is unconfirmed — call before buying.</li>
+      <li><b>Corvette C8:</b> early cars had valve-spring, transmission and no-start issues, mostly fixed under warranty; check the valve-spring bulletin on June–Sept 2020 builds (<a href="https://8020automotive.com/chevy-lt2-engine-problems/" target="_blank" rel="noopener">8020 Automotive</a>).</li>
+      <li><b>Out of budget:</b> Lexus LC 500 ($76k+ asks), Lotus Emira ($89k+), Mercedes-AMG GT (~$72k+), Acura NSX (~$130k), G-Wagon 2019+ (~$83k).</li>
+    </ul>
+    <p class="i8-muted">From a deep research pass on Oct 9, 2026. Several prices are asks or KBB values, not sales. Get Greenville insurance quotes on your top 2–3; that will likely decide it.</p>
+  </section>
+  </div>
+</div>
+
+<script>
+(function () { // own scope: the dashboard ran each block separately
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  ['prices', 'news', 'guide', 'alts'].forEach(t => document.getElementById('tab-' + t).hidden = b.dataset.tab !== t);
+}));
+// F1-F4 jump to the tabs; skipped while typing in a field. shortcut: the browser may grab F3/F1 in some setups, click still works.
+document.addEventListener('keydown', (e) => {
+  const i = ['F1', 'F2', 'F3', 'F4'].indexOf(e.key);
+  if (i < 0 || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  e.preventDefault(); document.querySelectorAll('[data-tab]')[i].click();
+});
+
+const fmt$ = (v) => v == null || isNaN(v) ? '—' : '$' + d3.format(',.0f')(v);
+const fmtK = (v) => '$' + d3.format(',.0f')(v / 1000) + 'k';
+const fmtPct = (v) => v == null || isNaN(v) ? '—' : (v > 0 ? '+' : '') + d3.format('.1%')(v);
+const parse = d3.utcParse('%Y-%m-%d');
+const num = (x) => Number(x);
+const ok = (id) => dash.data(id).status === 'ok';
+const rows = (id) => (ok(id) ? dash.data(id).data : []);
+window.i8 = { fmt$, fmtK, fmtPct, parse, num, ok, rows };
+
+dash.calc('stats', {
+  title: 'Headline figures',
+  description: 'Sold figures from yearly auction medians (years with 3+ sales for high/low); asking figures from current dealer listings.',
+  inputs: ['sold_yearly', 'sold_sales', 'asking_listings'],
+  fn: (sold_yearly, sold_sales, asking_listings) => [...new Set(sold_sales.map((r) => r.car))].flatMap((car) => {
+    const by = Object.fromEntries(sold_yearly.filter((r) => r.car === car).map((r) => [Number(r.year), r]));
+    const yrsDesc = Object.keys(by).map(Number).sort((a, b) => b - a);
+    const cur = by[yrsDesc[0]];
+    const base = by[2021] && !by[2021].thin ? by[2021] : by[yrsDesc.filter((y) => !by[y].thin).pop()] || by[yrsDesc[yrsDesc.length - 1]];
+    const prev = by[cur.year - 1];
+    const yr = Object.values(by);
+    const robust = yr.filter((r) => Number(r.sales) >= 3).length ? yr.filter((r) => Number(r.sales) >= 3) : yr;
+    const hi = robust.reduce((a, r) => (Number(r.median) > Number(a.median) ? r : a));
+    const lo = robust.reduce((a, r) => (Number(r.median) <= Number(a.median) ? r : a));
+    const asks = asking_listings.filter((r) => r.car === car);
+    const sales = sold_sales.filter((r) => r.car === car);
+    const live = asks.filter((r) => r.status === 'For sale').map((r) => Number(r.price));
+    const prior = asks.filter((r) => r.date >= '2025-10-01' && r.date <= '2025-12-31').map((r) => Number(r.price));
+    const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : null);
+    const recentSold = sales.filter((r) => !r.outlier && r.date >= '2026-07-01').map((r) => Number(r.price)).sort((a, b) => a - b);
+    const recentAsk = asks.filter((r) => r.date >= '2026-07-01').map((r) => Number(r.price)).sort((a, b) => a - b);
+    const med = (a) => (!a.length ? null : a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2);
+    const ratio = (a, b) => (a != null && b ? a / b - 1 : null);
+    const y5 = by[cur.year - 5];
+    return [
+      { metric: 's_current', value: Number(cur.median), note: `${cur.year}, ${cur.sales} sales${cur.thin ? ' (thin)' : ''}` },
+      { metric: 's_cur_year', value: null, note: String(cur.year) },
+      { metric: 's_2021', value: Number(base.median), note: `${base.year}, ${base.sales} sales` },
+      { metric: 's_base_year', value: null, note: String(base.year) },
+      { metric: 's_high', value: Number(hi.median), note: `${hi.year} yearly median (${hi.sales} sales)` },
+      { metric: 's_low', value: Number(lo.median), note: `${lo.year} yearly median (${lo.sales} sales)` },
+      { metric: 's_1y', value: prev ? ratio(Number(cur.median), Number(prev.median)) : null, note: prev ? `${cur.year} vs. ${prev.year} median` : 'No sales the year before' },
+      { metric: 's_5y', value: y5 ? ratio(Number(cur.median), Number(y5.median)) : null, note: y5 ? `${cur.year} vs. ${y5.year} median` : `No sales in ${cur.year - 5}` },
+      { metric: 'a_current', value: mean(live), note: `${live.length} cars for sale` },
+      { metric: 'a_high', value: live.length ? Math.max(...live) : null, note: 'of cars for sale now' },
+      { metric: 'a_low', value: live.length ? Math.min(...live) : null, note: 'of cars for sale now' },
+      { metric: 'a_1y', value: ratio(mean(live), mean(prior)), note: prior.length ? `vs. average ask Oct–Dec 2025 (${prior.length} listings)` : 'No listings from Oct–Dec 2025' },
+      { metric: 'a_5y', value: null, note: 'No dated asking history that far back' },
+      { metric: 'gap_latest', value: ratio(med(recentAsk), med(recentSold)), note: 'median ask vs. median sale since Jul 2026' },
+    ].map((r) => ({ car, ...r }));
+  }),
+});
+
+dash.calc('fair_band', {
+  title: 'Fair price band',
+  description: 'Middle 50% of auction sales since Oct 9, 2025 (min–max under 4 sales), per filter; outliers left out.',
+  inputs: ['sold_sales'],
+  fn: (sold_sales) => {
+    const SINCE = '2025-10-09';
+    const out = [];
+    for (const car of new Set(sold_sales.map((r) => r.car))) for (const body of ['all', 'coupe', 'roadster']) for (const years of ['all', '2014-2017', '2018-2020']) {
+      if (car !== 'i8' && (body !== 'all' || years !== 'all')) continue;
+      const p = sold_sales.filter((r) => r.car === car && !r.outlier && r.date >= SINCE
+        && (body === 'all' || r.body.toLowerCase() === body)
+        && (years === 'all' || (years === '2014-2017' ? Number(r.year) <= 2017 : Number(r.year) >= 2018)))
+        .map((r) => Number(r.price)).sort((a, b) => a - b);
+      const q = (t) => { const i = (p.length - 1) * t, f = Math.floor(i); return p[f] + (p[Math.min(f + 1, p.length - 1)] - p[f]) * (i - f); };
+      out.push({ key: `${car}|${body}|${years}`, n: p.length, low: p.length >= 4 ? q(0.25) : p.length ? p[0] : null, high: p.length >= 4 ? q(0.75) : p.length ? p[p.length - 1] : null, method: p.length >= 4 ? 'middle 50%' : 'min–max' });
+    }
+    return out;
+  },
+});
+
+dash.calc('gap', {
+  title: 'Asking vs. sold by quarter',
+  description: 'Median dealer ask and median auction sale in each quarter that has both.',
+  inputs: ['asking_listings', 'sold_sales'],
+  fn: (asking_listings, sold_sales) => {
+    const qk = (d) => `${d.slice(0, 4)} Q${Math.ceil(Number(d.slice(5, 7)) / 3)}`;
+    const med = (a) => { a.sort((x, y) => x - y); return a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2; };
+    const group = (list) => list.reduce((m, r) => ((m[r.car + '|' + qk(r.date)] ||= []).push(Number(r.price)), m), {});
+    const a = group(asking_listings), s = group(sold_sales.filter((r) => !r.outlier));
+    return Object.keys(a).filter((k) => s[k]).sort().map((k) => ({ key: k, car: k.split('|')[0], quarter: k.split('|')[1], ask_median: med(a[k]), sold_median: med(s[k]), gap: med(a[k]) / med(s[k]) - 1, ask_n: a[k].length, sold_n: s[k].length }));
+  },
+});
+
+dash.calc('seasonal', {
+  title: 'Price by quarter of year',
+  description: "Median of each sale's price divided by its calendar year's median sale, grouped by quarter; outliers left out.",
+  inputs: ['sold_sales', 'sold_yearly'],
+  fn: (sold_sales, sold_yearly) => {
+    const ym = Object.fromEntries(sold_yearly.map((r) => [r.car + '|' + r.year, Number(r.median)]));
+    const med = (a) => { a.sort((x, y) => x - y); return a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2; };
+    return [...new Set(sold_sales.map((x) => x.car))].flatMap((car) => [1, 2, 3, 4].map((q) => {
+      const k = (x) => car + '|' + x.date.slice(0, 4);
+      const r = sold_sales.filter((x) => x.car === car && !x.outlier && ym[k(x)] && Math.ceil(Number(x.date.slice(5, 7)) / 3) === q).map((x) => Number(x.price) / ym[k(x)]);
+      return { key: `${car}|Q${q}`, car, quarter: `Q${q}`, index: r.length ? med(r) - 1 : null, n: r.length };
+    }));
+  },
+});
+
+dash.calc('deal_model', {
+  title: 'Deal checker model',
+  description: "Per car: log(price) = mean + b*(miles - avg miles) + c*(model year - avg year), least squares on auction sales since 2024 (all sales if under 8), each sale first scaled to the latest year's median; s is the typical miss (log).",
+  inputs: ['sold_sales', 'sold_yearly'],
+  fn: (sold_sales, sold_yearly) => {
+    const ym = Object.fromEntries(sold_yearly.map((r) => [r.car + '|' + r.year, r]));
+    return [...new Set(sold_sales.map((r) => r.car))].map((car) => {
+      const cur = sold_yearly.filter((r) => r.car === car && !r.thin).sort((a, b) => b.year - a.year)[0];
+      const all = sold_sales.filter((r) => r.car === car && !r.outlier && r.miles != null);
+      const pts = all.filter((r) => r.date >= '2024-01-01').length >= 8 ? all.filter((r) => r.date >= '2024-01-01') : all;
+      const scale = (r) => { const m = ym[car + '|' + r.date.slice(0, 4)]; return cur && m && !m.thin ? cur.median / m.median : 1; };
+      const n = pts.length;
+      if (n < 8) return { car, n, mY: null, b: 0, c: 0, mx: 0, myr: 0, s: null };
+      const x = pts.map((r) => Number(r.miles)), y = pts.map((r) => Number(r.year)), L = pts.map((r) => Math.log(Number(r.price) * scale(r)));
+      const avg = (a) => a.reduce((t, v) => t + v, 0) / a.length;
+      const mx = avg(x), myr = avg(y), mY = avg(L);
+      let Sxx = 0, Syy = 0, Sxy = 0, SxL = 0, SyL = 0;
+      for (let i = 0; i < n; i++) { const dx = x[i] - mx, dy = y[i] - myr, dl = L[i] - mY; Sxx += dx * dx; Syy += dy * dy; Sxy += dx * dy; SxL += dx * dl; SyL += dy * dl; }
+      const det = Sxx * Syy - Sxy * Sxy;
+      let b = det > 1e-9 * Sxx * Syy ? (SxL * Syy - SyL * Sxy) / det : SxL / Sxx;
+      let c = det > 1e-9 * Sxx * Syy ? (SyL * Sxx - SxL * Sxy) / det : 0;
+      b = Math.min(0, Math.max(-2e-5, b)); // a car never gains value with miles; cap at -20% per 10k
+      c = Math.min(0.3, Math.max(-0.1, c));
+      const res0 = L.map((l, i) => l - (mY + b * (x[i] - mx) + c * (y[i] - myr)));
+      // per-model-year offset (e.g. a facelift year), shrunk toward 0 when that year has few sales
+      const yoff = {};
+      for (const yr of new Set(y)) { const r = res0.filter((_, i) => y[i] === yr); yoff[yr] = r.reduce((t, v) => t + v, 0) / (r.length + 3); }
+      const res = res0.map((v, i) => v - yoff[y[i]]);
+      const sd = Math.max(0.05, Math.sqrt(res.reduce((t, v) => t + v * v, 0) / Math.max(1, n - 2)));
+      return { car, n, mY, b, c, mx, myr, s: sd, yoff: JSON.stringify(yoff), min_miles: Math.min(...x), max_miles: Math.max(...x), base_year: cur ? cur.year : null };
+    });
+  },
+});
+})();
+</script>
+
+<script>
+(function () { // own scope: the dashboard ran each block separately
+const { fmt$, fmtK, fmtPct, parse, rows, ok } = window.i8;
+
+document.querySelectorAll('.i8-seg[data-param]').forEach((g) => g.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b) dash.setParams({ [g.dataset.param]: b.dataset.v });
+}));
+
+const car = () => dash.params().car || 'i8';
+const isI8 = () => car() === 'i8';
+const crow = (id) => rows(id).filter((r) => r.car === car());
+const mi = (m) => (m == null ? '? ' : d3.format(',')(m));
+const vsName = () => (rows('car_profiles').find((c) => c.id === dash.params().vs) || {}).name || '';
+const carName = () => { const p = rows('car_profiles').find((c) => c.id === car()); return p ? p.name : 'BMW i8'; };
+const match = (r) => {
+  if (r.car !== car()) return false;
+  if (!isI8()) return true;
+  const { body, years } = dash.params();
+  const y = Number(r.year);
+  return (body === 'all' || String(r.body).toLowerCase() === body)
+    && (years === 'all' || (years === '2014-2017' ? y <= 2017 : y >= 2018));
+};
+const band = () => {
+  const { body, years } = isI8() ? dash.params() : { body: 'all', years: 'all' };
+  return rows('fair_band').find((r) => r.key === `${car()}|${body}|${years}`);
+};
+const median = (a) => (a.length ? d3.median(a) : null);
+const C = dash.colors;
+const muted = 'var(--cds-chart-muted)';
+
+function legend(el, items) {
+  el.replaceChildren(...items.map(([color, label, style]) => {
+    const s = document.createElement('span');
+    const sw = document.createElement('i');
+    sw.className = 'i8-sw';
+    sw.style.cssText = style || `background:${color}`;
+    s.append(sw, label);
+    return s;
+  }));
+}
+
+function pinDetail(el, r, kind) {
+  el.hidden = false;
+  el.replaceChildren();
+  const t = document.createElement('div');
+  t.textContent = `${r.year} ${carName()} · ${mi(r.miles)} mi · ${r.location} · ${fmt$(r.price)} ${kind} on ${d3.utcFormat('%b %-d, %Y')(parse(r.date))}`;
+  el.append(t);
+  if (r.note) { const n = document.createElement('div'); n.className = 'i8-muted'; n.textContent = r.note; el.append(n); }
+  const a = document.createElement('a');
+  a.href = r.url; a.target = '_blank'; a.rel = 'noopener';
+  a.textContent = 'Open source ↗';
+  el.append(a);
+}
+
+function frame(el, xDomain, yDomain) {
+  el.replaceChildren();
+  const W = Math.max(300, el.clientWidth), H = 340;
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+  const y = d3.scaleLinear(yDomain, [H - 28, 60]).nice();
+  const probe = svg.append('text').attr('font-size', 11).text(fmtK(y.domain()[1]));
+  const ml = probe.node().getComputedTextLength() + 10; probe.remove();
+  const x = d3.scaleUtc(xDomain, [ml, W - 10]);
+  svg.append('g').selectAll('line').data(y.ticks(5)).join('line')
+    .attr('x1', ml).attr('x2', W - 10).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+  svg.append('g').attr('transform', `translate(0,${H - 28})`)
+    .call(d3.axisBottom(x).ticks(W < 500 ? 4 : 8).tickSizeOuter(0))
+    .attr('font-size', null).attr('font-family', null)
+    .call((g) => { g.select('.domain').attr('stroke', 'var(--cds-chart-axis)'); g.selectAll('text').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)'); g.selectAll('.tick line').remove(); });
+  svg.append('g').selectAll('text').data(y.ticks(5)).join('text')
+    .attr('x', ml - 6).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end')
+    .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(fmtK);
+  const tip = document.createElement('div'); tip.className = 'i8-tip'; el.append(tip);
+  const show = (event, lines) => {
+    tip.replaceChildren(...lines.map(([cls, txt]) => { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = txt; return d; }));
+    tip.style.display = 'block';
+    const [px, py] = d3.pointer(event, el);
+    const w = tip.offsetWidth;
+    tip.style.left = Math.min(Math.max(0, px + 12), el.clientWidth - w) + 'px';
+    tip.style.top = Math.max(0, py - tip.offsetHeight - 8) + 'px';
+  };
+  const hide = () => { tip.style.display = 'none'; };
+  return { svg, x, y, W, H, show, hide };
+}
+
+function drawBand(f, b) {
+  if (!b || b.low == null) return;
+  const x0 = f.x(parse('2025-10-09')), x1 = f.x.range()[1];
+  f.svg.append('rect').attr('x', x0).attr('width', x1 - x0)
+    .attr('y', f.y(b.high)).attr('height', Math.max(2, f.y(b.low) - f.y(b.high)))
+    .attr('fill', C[2]).attr('opacity', 0.16);
+}
+
+function dots(f, data, color, kind, pin, hollowFn) {
+  if (dash.params().dots !== 'on') return;
+  f.svg.append('g').selectAll('circle').data(data).join('circle')
+    .attr('cx', (d) => f.x(parse(d.date))).attr('cy', (d) => f.y(d.price)).attr('r', 4.5)
+    .attr('fill', (d) => (hollowFn && hollowFn(d) ? 'var(--color-panel)' : color))
+    .attr('stroke', color).attr('stroke-width', 1.5)
+    .attr('opacity', (d) => (d.outlier ? 0.35 : 0.75)).style('cursor', 'pointer')
+    .on('mousemove', (e, d) => f.show(e, [['d', d3.utcFormat('%b %-d, %Y')(parse(d.date))], ['', `${d.year} · ${mi(d.miles)} mi · ${fmt$(d.price)}`], ['d', d.status ? `${d.status} · ${d.seller}` : d.venue], ...(d.note ? [['d', d.note]] : [])]))
+    .on('mouseleave', f.hide)
+    .on('click', (e, d) => pinDetail(pin, d, kind));
+}
+
+function line(f, pts, color, dashed) {
+  f.svg.append('path').datum(pts)
+    .attr('d', d3.line().defined((p) => p.v != null).x((p) => f.x(p.t)).y((p) => f.y(p.v)))
+    .attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2)
+    .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
+    .attr('stroke-dasharray', dashed ? '5 4' : null);
+}
+
+const quarterPts = (list) => d3.groups(list, (r) => `${r.date.slice(0, 4)}-${Math.ceil(Number(r.date.slice(5, 7)) / 3)}`)
+  .map(([k, g]) => { const [yr, q] = k.split('-').map(Number); return { t: new Date(Date.UTC(yr, (q - 1) * 3 + 1, 15)), v: median(g.map((r) => Number(r.price))), n: g.length, k: `${yr} Q${q}` }; })
+  .sort((a, b) => a.t - b.t);
+
+function drawSold() {
+  const el = document.getElementById('sold-chart');
+  const pin = document.getElementById('sold-pin');
+  const note = document.getElementById('sold-filter-note');
+  if (!['sold_yearly', 'sold_sales', 'events'].every(ok)) { el.replaceChildren(); return; }
+  const all = !isI8() || (dash.params().body === 'all' && dash.params().years === 'all');
+  const sales = rows('sold_sales').filter(match);
+  const clean = sales.filter((r) => !r.outlier);
+  const yearly = crow('sold_yearly');
+  const y0 = Math.min(...yearly.map((r) => Number(r.year)), ...sales.map((r) => Number(r.date.slice(0, 4)))), y1 = 2026;
+  note.textContent = all ? '' : 'Yearly medians cover all model years, so they are hidden while a filter is on.';
+  const yrs = d3.range(isI8() ? 2016 : y0, 2027).map((yr) => yearly.find((r) => Number(r.year) === yr) || { year: yr, median: null });
+  const vs = dash.params().vs, vsYearly = vs && vs !== car() ? rows('sold_yearly').filter((r) => r.car === vs) : [];
+  const yVals = [...clean.map((r) => Number(r.price)), ...(all ? yearly.map((r) => Number(r.p75)) : []), ...vsYearly.map((r) => Number(r.median))];
+  const x0 = isI8() ? parse('2014-01-01') : new Date(Date.UTC(y0 - 1, 0, 1));
+  const f = frame(el, [x0, parse('2026-12-31')], [Math.min(30000, d3.min(yVals) || 30000), (d3.max(yVals) || 90000) * 1.05]);
+  drawBand(f, band());
+  if (all) {
+    f.svg.append('path').datum(yrs.filter((r) => r.median != null && !r.thin))
+      .attr('d', d3.area().x((r) => f.x(new Date(Date.UTC(r.year, 6, 1)))).y0((r) => f.y(r.p25)).y1((r) => f.y(r.p75)))
+      .attr('fill', C[0]).attr('opacity', 0.12);
+    const pts = yrs.map((r) => ({ t: new Date(Date.UTC(r.year, 6, 1)), v: r.median == null ? null : Number(r.median), r }));
+    // dashed through every year, solid only where a year has enough sales
+    line(f, pts.filter((p) => p.v != null), C[0], true);
+    line(f, pts.map((p) => ({ ...p, v: p.r.thin ? null : p.v })), C[0], false);
+    f.svg.append('g').selectAll('circle').data(pts.filter((p) => p.v != null)).join('circle')
+      .attr('cx', (p) => f.x(p.t)).attr('cy', (p) => f.y(p.v)).attr('r', 5)
+      .attr('fill', (p) => (p.r.thin ? 'var(--color-panel)' : C[0])).attr('stroke', C[0]).attr('stroke-width', 2)
+      .on('mousemove', (e, p) => f.show(e, [['d', `${p.r.year} yearly median`], ['', fmt$(p.v)], ['d', `${p.r.sales} sales · middle 50% ${fmt$(p.r.p25)}–${fmt$(p.r.p75)}`], ...(p.r.thin ? [['d', 'Too few sales to trust']] : [])]))
+      .on('mouseleave', f.hide);
+  }
+  line(f, quarterPts(clean.filter((r) => r.date >= '2024-01-01')), C[1], false);
+  if (vsYearly.length) {
+    const vp = vsYearly.map((r) => ({ t: new Date(Date.UTC(Number(r.year), 6, 1)), v: Number(r.median), r })).filter((q) => q.t >= x0).sort((a, b) => a.t - b.t);
+    line(f, vp, C[4], true);
+    f.svg.append('g').selectAll('rect').data(vp).join('rect').attr('x', (q) => f.x(q.t) - 4).attr('y', (q) => f.y(q.v) - 4).attr('width', 8).attr('height', 8).attr('fill', C[4])
+      .on('mousemove', (e, q) => f.show(e, [['d', `${q.r.year} yearly median · ${vsName()}`], ['', fmt$(q.v)], ['d', `${q.r.sales} sales`]])).on('mouseleave', f.hide);
+  }
+  dots(f, sales, C[1], 'sold', pin);
+  crow('events').filter((ev) => parse(ev.date) >= x0).forEach((ev, i) => {
+    const xx = f.x(parse(ev.date));
+    const g = f.svg.append('g').style('cursor', 'help')
+      .on('mousemove', (e) => f.show(e, [['d', ev.approx ? `${ev.date.slice(0, 4)} (year only)` : d3.utcFormat('%b %-d, %Y')(parse(ev.date))], ['', ev.label], ['d', ev.detail]]))
+      .on('mouseleave', f.hide);
+    g.append('line').attr('x1', xx).attr('x2', xx).attr('y1', 22).attr('y2', f.H - 28)
+      .attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '3 3');
+    g.append('rect').attr('x', xx - 6).attr('width', 12).attr('y', 10).attr('height', f.H - 38).attr('fill', 'transparent');
+    const lbl = g.append('text').attr('x', xx + 4).attr('y', 12 + 12 * i)
+      .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)')
+      .text(ev.value ? `${ev.label} · ${fmtK(ev.value)} record, off chart` : ev.label);
+    if (xx + 4 + lbl.node().getComputedTextLength() > f.W - 4) lbl.attr('x', xx - 4).attr('text-anchor', 'end');
+  });
+  legend(document.getElementById('sold-legend'), [
+    ...(all ? [[C[0], 'Yearly median'], [C[0], 'Hollow = too few sales', `border:2px solid ${C[0]};background:transparent`]] : []),
+    [C[1], 'Quarterly median & each sale'],
+    ...(vsYearly.length ? [[C[4], `${vsName()} yearly median`]] : []),
+    [C[2], 'Fair price band', `background:${C[2]};opacity:.35`],
+  ]);
+}
+
+function drawAsk() {
+  const el = document.getElementById('ask-chart');
+  const pin = document.getElementById('ask-pin');
+  if (!['asking_listings', 'sold_sales'].every(ok)) { el.replaceChildren(); return; }
+  const asks = rows('asking_listings').filter(match);
+  const start = asks.length ? d3.utcMonth.floor(parse(d3.min(asks, (r) => r.date))) : parse('2025-07-01');
+  const sold = rows('sold_sales').filter((r) => match(r) && !r.outlier && parse(r.date) >= start);
+  const vals = [...asks, ...sold].map((r) => Number(r.price));
+  const f = frame(el, [start, parse('2026-10-31')], [Math.min(30000, d3.min(vals) || 30000), (d3.max(vals) || 90000) * 1.05]);
+  drawBand(f, band());
+  const monthly = d3.groups(asks, (r) => r.date.slice(0, 7)).map(([m, g]) => ({ t: new Date(Date.UTC(+m.slice(0, 4), +m.slice(5, 7) - 1, 15)), v: median(g.map((r) => Number(r.price))) })).sort((a, b) => a.t - b.t);
+  // break the line across months with no listings
+  const filled = d3.utcMonths(start, parse('2026-11-01')).map((m) => monthly.find((p) => +d3.utcMonth.floor(p.t) === +m) || { t: new Date(+m + 14 * 864e5), v: null });
+  line(f, filled, C[3], false);
+  line(f, quarterPts(sold), muted, true);
+  dots(f, asks, C[3], 'asking', pin, (d) => d.status !== 'For sale');
+  legend(document.getElementById('ask-legend'), [
+    [C[3], 'Monthly median ask & each listing'],
+    [muted, 'Quarterly median sale', `border-top:2px dashed ${muted};height:0;background:transparent`],
+    [C[2], 'Fair price band', `background:${C[2]};opacity:.35`],
+  ]);
+}
+
+function fillStats() {
+  const s = rows('stats');
+  document.querySelectorAll('[data-source="stats"]').forEach((el) => {
+    const m = new URLSearchParams(el.dataset.where).get('metric');
+    el.dataset.where = `car=${encodeURIComponent(car())}&metric=${m}`;
+    const r = s.find((x) => x.car === car() && x.metric === m);
+    if (!r) { el.textContent = '—'; return; }
+    if (el.dataset.field === 'note') { el.textContent = r.note; return; }
+    if (r.value == null) { el.textContent = '—'; el.classList.remove('i8-up', 'i8-down'); return; }
+    const pct = /_1y|_5y|gap/.test(r.metric);
+    el.textContent = pct ? fmtPct(r.value) : fmt$(r.value);
+    el.classList.toggle('i8-up', pct && r.value > 0 && !r.metric.startsWith('gap'));
+    el.classList.toggle('i8-down', pct && r.value < 0);
+  });
+}
+
+function fillTable(id, src, cols) {
+  const tb = document.querySelector(`#${id} tbody`);
+  tb.replaceChildren(...crow(src).map((r) => {
+    const tr = document.createElement('tr');
+    tr.dataset.key = r.key;
+    cols.forEach(([k, f]) => { const td = document.createElement('td'); td.textContent = f ? f(r[k]) : r[k]; tr.append(td); });
+    return tr;
+  }));
+}
+
+function fillSale() {
+  const tb = document.querySelector('#sale-table tbody');
+  const b = band();
+  const sy = document.getElementById('s-year').value, sm = Number(document.getElementById('s-miles').value) || Infinity, ss = document.getElementById('s-src').value;
+  const live = rows('asking_listings').filter((r) => r.status === 'For sale' && match(r)
+    && (!sy || Number(r.year) >= Number(sy)) && (r.miles == null ? sm === Infinity : Number(r.miles) <= sm) && (!ss || String(r.sources).includes(ss))).sort((a, z) => a.price - z.price);
+  document.getElementById('s-count').textContent = `${live.length} car${live.length === 1 ? '' : 's'} match`;
+  tb.replaceChildren(...live.map((r) => {
+    const tr = document.createElement('tr');
+    tr.dataset.key = r.url;
+    const cell = (txt, cls) => { const td = document.createElement('td'); td.textContent = txt; if (cls) td.className = cls; tr.append(td); return td; };
+    cell(fmt$(r.price), b && b.low != null && r.price < b.low ? 'i8-deal' : '');
+    const fv = r.miles == null ? null : fairValue(car(), Number(r.year), Number(r.miles));
+    if (fv) { const pct = r.price / fv - 1; cell(fmtPct(pct), verdictOf(pct)[1]).title = verdictOf(pct)[0]; } else cell('—');
+    cell(r.year); cell(mi(r.miles)); cell(r.location); cell(r.seller); cell(r.sources);
+    const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'View ↗';
+    cell('').append(a);
+    return tr;
+  }));
+}
+
+function fillTiming() {
+  const s = rows('seasonal').filter((r) => r.n >= 3);
+  const t = document.getElementById('t-text');
+  if (!s.length) { t.textContent = ''; return; }
+  const lo = s.reduce((a, r) => (r.index < a.index ? r : a));
+  const hi = s.reduce((a, r) => (r.index > a.index ? r : a));
+  t.textContent = `Sales in ${lo.quarter} have run ${fmtPct(lo.index)} against their year's median, vs. ${fmtPct(hi.index)} in ${hi.quarter}. The samples are small and the spread between quarters is modest, so this is a weak hint, not a pattern. The clearer signal is the long-run trend in Chart 1.`;
+}
+
+document.getElementById('s-year').addEventListener('change', fillSale);
+document.getElementById('s-miles').addEventListener('input', fillSale);
+document.getElementById('s-src').addEventListener('change', fillSale);
+const yearSel = document.getElementById('b-year');
+const milesIn = document.getElementById('b-miles');
+milesIn.value = '40000';
+let yearsFor = null;
+function syncCar() {
+  // rebuild car list and per-car year menus when the car changes
+  document.getElementById('page-title').textContent = `Vehicle Terminal · ${carName()}`;
+  document.querySelectorAll('.i8-only').forEach((e) => { e.hidden = !isI8(); });
+  document.getElementById('sources-other').hidden = isI8();
+  document.getElementById('gap-note').textContent = (rows('car_profiles').find((c) => c.id === car()) || {}).price_gaps || '';
+  if (yearsFor === car() || !ok('sold_sales')) return;
+  yearsFor = car();
+  const ys = [...new Set([...crow('sold_sales'), ...crow('asking_listings')].map((r) => Number(r.year)))].sort();
+  const sy = document.getElementById('s-year');
+  sy.replaceChildren(new Option('Any', ''), ...ys.slice(1).map((y) => new Option(`${y} and after`, String(y))));
+  yearSel.replaceChildren(...ys.map((y) => new Option(String(y), String(y))));
+  const counts = d3.rollup(crow('sold_sales'), (g) => g.length, (r) => Number(r.year));
+  yearSel.value = String(isI8() ? 2016 : d3.greatest(counts, (d) => d[1])?.[0] ?? ys[0]);
+  const dy = document.getElementById('d-year');
+  dy.replaceChildren(...ys.map((y) => new Option(String(y), String(y))));
+  dy.value = yearSel.value;
+}
+// fair value for a car/year/miles from the deal model (null when too few sales)
+function fairValue(carId, year, miles) {
+  const m = rows('deal_model').find((r) => r.car === carId);
+  if (!m || m.mY == null) return null;
+  return Math.exp(m.mY + m.b * (miles - m.mx) + m.c * (year - m.myr) + (JSON.parse(m.yoff || '{}')[year] || 0));
+}
+const verdictOf = (pct) => (pct <= -0.1 ? ['Great deal', 'i8-up'] : pct <= 0 ? ['Good deal', 'i8-up'] : pct <= 0.1 ? ['Fair — normal dealer markup', ''] : pct <= 0.2 ? ['High — negotiate', 'i8-warn'] : ['Overpriced', 'i8-bad']);
+function fillDeal() {
+  const out = document.getElementById('d-out');
+  const p = (msg, cls) => { const e = document.createElement('p'); if (cls) e.className = cls; e.textContent = msg; return e; };
+  out.replaceChildren();
+  const m = rows('deal_model').find((r) => r.car === car());
+  const yr = Number(document.getElementById('d-year').value), miles = Number(document.getElementById('d-miles').value) || 0, price = Number(document.getElementById('d-price').value);
+  if (!m || m.mY == null) { out.append(p(`Only ${m ? m.n : 0} usable auction sales for this car, too few to price a quote. Use the KBB figure and the listings below instead.`, 'i8-muted')); }
+  if (!price || !yr) return;
+  if (m && m.mY != null) {
+    const fair = fairValue(car(), yr, miles), pct = price / fair - 1, [label, cls] = verdictOf(pct);
+    const z = (Math.log(price) - Math.log(fair)) / m.s, cdf = 1 / (1 + Math.exp(-1.702 * z));
+    out.append(p(label, 'i8-verdict ' + cls));
+    out.append(p(`${fmt$(price)} is ${fmtPct(pct)} vs. a fair value of ${fmt$(fair)} for a ${yr} with ${d3.format(',')(miles)} miles. Comparable cars usually sell between ${fmt$(fair * Math.exp(-m.s))} and ${fmt$(fair * Math.exp(m.s))}; this price is higher than about ${Math.round(cdf * 100)}% of them.`, 'i8-num'));
+    const g = rows('stats').find((r) => r.car === car() && r.metric === 'gap_latest');
+    if (miles > m.max_miles || miles < m.min_miles) out.append(p(`Caution: the sales behind this cover ${d3.format(',')(m.min_miles)}–${d3.format(',')(m.max_miles)} miles, so a ${d3.format(',')(miles)}-mile estimate is a stretch.`, 'i8-warn'));
+    out.append(p(`Built from ${m.n} auction sales. Dealers ask ${g && g.value != null ? fmtPct(g.value) : 'more'} vs. auction prices for this car, so a dealer quote 0–10% over fair value is normal; a fair target is ${fmt$(fair)}–${fmt$(fair * 1.05)}.`, 'i8-muted'));
+  }
+  const k = rows('kbb_values').filter((r) => r.car === car() && Number(r.year) === yr && r.fair_price);
+  if (k.length) out.append(p(`KBB fair purchase price for a ${yr}: ${k.map((r) => fmt$(r.fair_price) + (k.length > 1 ? ' (' + r.trim + ')' : '')).join(', ')} at typical miles, good condition.`, 'i8-muted'));
+  const sim = rows('asking_listings').filter((r) => r.car === car() && r.status === 'For sale' && Math.abs(Number(r.year) - yr) <= 1 && r.miles != null && Math.abs(r.miles - miles) <= 20000).sort((a, b) => a.price - b.price);
+  if (sim.length) {
+    out.append(p(`${sim.filter((r) => r.price < price).length} of ${sim.length} similar cars for sale now (±1 year, ±20k miles) ask less. Cheapest:`, 'i8-muted'));
+    const ul = document.createElement('ul'); ul.className = 'i8-list';
+    sim.slice(0, 3).forEach((r) => { const li = document.createElement('li'); const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = `${fmt$(r.price)} · ${r.year} · ${mi(r.miles)} mi · ${r.location || r.seller}`; li.append(a); ul.append(li); });
+    out.append(ul);
+  }
+}
+['d-year', 'd-miles', 'd-price'].forEach((id) => document.getElementById(id).addEventListener('input', fillDeal));
+
+yearSel.addEventListener('change', fillBuyer);
+milesIn.addEventListener('input', fillBuyer);
+
+function fillBuyer() {
+  const out = document.getElementById('b-out');
+  if (!ok('sold_sales') || !ok('asking_listings')) { out.replaceChildren(); return; }
+  const yr = Number(yearSel.value), max = Number(milesIn.value) || Infinity;
+  const pick = (list) => list.filter((r) => r.car === car() && Number(r.year) === yr && (r.miles == null ? max === Infinity : Number(r.miles) <= max));
+  const sold = pick(rows('sold_sales').filter((r) => !r.outlier && r.date >= '2025-10-09')).map((r) => Number(r.price)).sort(d3.ascending);
+  const p = (msg, cls) => { const e = document.createElement('p'); if (cls) e.className = cls; e.textContent = msg; return e; };
+  out.replaceChildren();
+  if (sold.length < 2) {
+    out.append(p(`Only ${sold.length} matching auction sale${sold.length === 1 ? '' : 's'} since Oct 2025${sold.length ? ` (${fmt$(sold[0])})` : ''}, too few for a range. Try a higher mileage cap or a neighbouring year.`));
+    return;
+  }
+  const four = sold.length >= 4;
+  const low = four ? d3.quantile(sold, 0.25) : sold[0], high = four ? d3.quantile(sold, 0.75) : sold[sold.length - 1];
+  out.append(p(`Typical sold price: ${fmt$(low)} – ${fmt$(high)} (${four ? 'middle 50%' : 'lowest to highest'} of ${sold.length} sales).`, 'i8-num'));
+  const cheap = pick(rows('asking_listings').filter((r) => r.status === 'For sale')).filter((r) => Number(r.price) < low).sort((a, b) => a.price - b.price);
+  const live = pick(rows('asking_listings').filter((r) => r.status === 'For sale'));
+  out.append(p(`${cheap.length} of ${live.length} matching dealer listings ask less than the low end. A low ask can be a deal or a car with problems: get a pre-purchase inspection.${isI8() ? ' On an i8, check the battery and hybrid system.' : ''}`, 'i8-muted'));
+  if (cheap.length) {
+    const ul = document.createElement('ul'); ul.className = 'i8-list';
+    cheap.forEach((r) => { const li = document.createElement('li'); const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = `${fmt$(r.price)} · ${mi(r.miles)} mi · ${r.location} (${r.seller})`; li.append(a); ul.append(li); });
+    out.append(ul);
+  }
+}
+
+dash.onData(() => {
+  syncCar();
+  document.querySelectorAll('.i8-seg[data-param]').forEach((g) => g.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(dash.params()[g.dataset.param] === b.dataset.v))));
+  fillStats();
+  drawSold();
+  drawAsk();
+  fillTable('gap-table', 'gap', [['quarter'], ['ask_median', fmt$], ['sold_median', fmt$], ['gap', fmtPct], ['ask_n'], ['sold_n']]);
+  fillTable('season-table', 'seasonal', [['quarter'], ['index', fmtPct], ['n']]);
+  fillTiming();
+  fillSale();
+  fillBuyer();
+  fillDeal();
+});
+})();
+</script>
+<script>
+(function () { // own scope: the dashboard ran each block separately
+(function () {
+  const { fmt$, fmtPct, rows } = window.i8;
+  const $ = (id) => document.getElementById(id);
+  const safe = (u) => (/^https?:\/\//.test(u || '') ? u : null);
+  const link = (u, t) => { const h = safe(u); const e = document.createElement(h ? 'a' : 'span'); e.textContent = t; if (h) { e.href = h; e.target = '_blank'; e.rel = 'noopener'; } return e; };
+  const L = (v) => (Array.isArray(v) ? v : []);
+  const fill = (tb, items, cells) => tb.replaceChildren(...L(items).map((it) => { const tr = document.createElement('tr'); cells(it).forEach((c) => { const td = document.createElement('td'); if (c instanceof Node) td.append(c); else td.textContent = c ?? '—'; tr.append(td); }); return tr; }));
+  const list = (ul, items) => ul.replaceChildren(...L(items).map((t) => { const li = document.createElement('li'); li.textContent = t; return li; }));
+  const yearsIn = (txt) => { const m = String(txt).match(/\d{4}/g) || []; if (m.length === 2 && /[–-]/.test(txt)) { const out = []; for (let y = +m[0]; y <= +m[1]; y++) out.push(y); return out; } return m.map(Number); };
+  $('car-a').addEventListener('change', (e) => dash.setParams({ car: e.target.value }));
+  $('car-b').addEventListener('change', (e) => dash.setParams({ vs: e.target.value }));
+  // the file loader may hand nested lists/objects back as JSON text; turn them back into values
+  const parse = (v) => { if (typeof v === 'string' && /^\s*[\[{]/.test(v)) { try { return JSON.parse(v); } catch (e) { return v; } } return v; };
+  const norm = (c) => Object.fromEntries(Object.entries(c).map(([k, v]) => { v = parse(v); if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).every((n) => /^\d+$/.test(n))) v = Object.values(v); return [k, v]; }));
+  dash.onData(() => {
+    const cars = rows('car_profiles').map(norm);
+    if (!cars.length) return;
+    if ($('car-a').options.length !== cars.length) {
+      $('car-a').replaceChildren(...cars.map((c) => new Option(`${c.name} · ${c.years}`, c.id)));
+      $('car-b').replaceChildren(new Option('None', ''), ...cars.map((c) => new Option(`${c.name} · ${c.years}`, c.id)));
+    }
+    const { car = 'i8', vs = '' } = dash.params();
+    const A = cars.find((c) => c.id === car) || cars[0], B = vs && vs !== A.id ? cars.find((c) => c.id === vs) : null;
+    $('car-a').value = A.id; $('car-b').value = B ? B.id : '';
+    const stat = (id, m) => rows('stats').find((r) => r.car === id && r.metric === m);
+    const kbb = (id) => { const v = rows('kbb_values').filter((r) => r.car === id && r.fair_price).map((r) => r.fair_price); return v.length ? `${fmt$(Math.min(...v))}–${fmt$(Math.max(...v))} by year` : '—'; };
+    const val = (id, m, pct) => { const r = stat(id, m); return r && r.value != null ? `${pct ? fmtPct(r.value) : fmt$(r.value)} (${r.note})` : '—'; };
+    // compare panel
+    $('cmp-card').hidden = !B;
+    if (B) {
+      $('cmp-title').textContent = `${A.name} vs ${B.name}`;
+      $('cmp-a').textContent = A.name; $('cmp-b').textContent = B.name;
+      $('cmp-vs').textContent = B.id === 'i8' ? A.vs_i8 : A.id === 'i8' ? B.vs_i8 : '';
+      const risks = (c) => L(c.known_issues).slice(0, 3).map((k) => k.item + (k.cost && k.cost !== '—' ? ` (${k.cost})` : '')).join('; ');
+      const R = [
+        ['Median sold, latest year', (c) => val(c.id, 's_current')], ['Average ask now', (c) => val(c.id, 'a_current')], ['Dealers ask vs. sold', (c) => val(c.id, 'gap_latest', true)],
+        ['KBB fair price', (c) => kbb(c.id)], ['What ~$60k gets', (c) => c.specs?.what_60k], ['Horsepower', (c) => c.specs?.hp], ['0–60', (c) => c.specs?.zero60],
+        ['Insurance / yr', (c) => c.specs?.insurance], ['Value trend', (c) => c.specs?.value_trend], ['Risk', (c) => c.specs?.risk], ['Recalls', (c) => c.recall_note],
+        ['Sentiment', (c) => c.sentiment_summary], ['Main risks', risks], ['Repair difficulty (build)', (c) => { const b = norm(c.build) || {}; return b.rating ? `${b.rating}: ${b.layout}` : '—'; }], ['Verdict', (c) => c.verdict], ['Service near Greenville', (c) => c.service],
+      ];
+      fill($('cmp-rows'), R, ([k, f]) => [k, f(A), f(B)]);
+    }
+    // news tab for A
+    $('n-title').textContent = `Which ${A.name} to buy?`;
+    $('n-picks').replaceChildren(...L(A.best_picks).map((b) => { const d = document.createElement('div'); const l = document.createElement('span'); l.className = 'i8-muted'; l.textContent = b.label; const t = document.createElement('b'); t.textContent = b.pick; const w = document.createElement('p'); w.className = 'i8-muted'; w.textContent = b.why; d.append(l, t, w); return d; }));
+    const sales = rows('sold_sales').filter((r) => r.car === A.id && !r.outlier && r.date >= '2025-01-01');
+    const live = rows('asking_listings').filter((r) => r.car === A.id && r.status === 'For sale');
+    const kb = rows('kbb_values').filter((r) => r.car === A.id && r.fair_price);
+    fill($('n-years'), A.model_years, (y) => { const ys = yearsIn(y.years); const p = sales.filter((r) => ys.includes(Number(r.year))).map((r) => Number(r.price)); const k = kb.filter((r) => ys.includes(Number(r.year))).map((r) => r.fair_price); const n = live.filter((r) => ys.includes(Number(r.year))).length;
+      return [y.years, y.changes, y.specs, y.recalls, p.length ? `${fmt$(d3.median(p))} (${p.length})` : '—', k.length ? (k.length > 1 ? `${fmt$(Math.min(...k))}–${fmt$(Math.max(...k))}` : fmt$(k[0])) : '—', n ? `${n} car${n > 1 ? 's' : ''}` : 'none']; });
+    $('n-recnote').textContent = A.recall_note || '';
+    fill($('n-recalls'), A.recalls, (x) => [x.filed, link(x.url, x.campaign), x.years, x.issue]);
+    $('n-sentsum').textContent = A.sentiment_summary || '';
+    fill($('n-sentiment'), A.sentiment, (x) => [link(x.url, x.source), x.who, x.rating, x.gist]);
+    fill($('n-issues'), A.known_issues, (x) => [x.item, x.cost, link(x.url, 'Source ↗')]);
+    const bd = norm(A.build) || {}; $('n-brate').textContent = bd.rating ? `· ${bd.rating}` : ''; $('n-blayout').textContent = bd.layout || ''; $('n-bsum').textContent = bd.summary || 'No build data yet.';
+    fill($('n-build'), bd.jobs, (x) => [x.job, x.why, x.cost, link(x.url, 'Source ↗')]);
+    fill($('n-news'), A.headlines, (x) => { const sp = document.createElement('span'); sp.append(link(x.url, x.title), ' · ' + (x.outlet || '')); return [x.date, sp]; });
+    // guide tab
+    $('g-a').textContent = A.name; $('g-verdict').textContent = A.verdict || '—';
+    $('g-bwrap').hidden = !B; $('g-costs-bwrap').hidden = !B;
+    if (B) { $('g-b').textContent = B.name; $('g-verdict-b').textContent = B.verdict || '—'; fill($('g-costs-b'), B.running_costs, (x) => [x.item, x.per_year, link(x.url, x.basis)]); }
+    fill($('g-costs'), A.running_costs, (x) => [x.item, x.per_year, link(x.url, x.basis)]);
+    $('g-repairs').replaceChildren(...L(A.big_repairs).map((x) => { const li = document.createElement('li'); li.append(`${x.item}: ${x.cost} `, link(x.url, '(source)')); return li; }));
+    list($('g-warranty'), A.warranty); list($('g-walk'), A.walk_away); list($('g-unknown'), A.unknowns);
+    $('g-service').textContent = `Where to inspect and service it: ${A.service || 'unconfirmed'}.`;
+    fill($('g-check'), A.checklist, (x) => [x.check, x.why]);
+    // head-to-head (all cars)
+    { const ys = rows('sold_yearly'); const chips = cars.map((c) => { const r = ys.filter((x) => x.car === c.id).sort((p, q) => p.year - q.year); const l = r[r.length - 1], p = r[r.length - 2]; if (!l) return null;
+        const ch = p && p.median ? l.median / p.median - 1 : null; const sp = document.createElement('span'); const b = document.createElement('b'); b.textContent = c.id === 'i8' ? 'I8' : c.name.replace(/^(Porsche|Mercedes-Benz|Lexus|Lotus|Chevrolet|Audi|Nissan)\s+/, '').split(/[ (]/)[0].toUpperCase() + (/GTS/.test(c.name) ? ' GTS' : '');
+        const v = document.createElement('span'); v.textContent = fmt$(l.median); const i = document.createElement('i'); i.textContent = ch == null ? '—' : (ch > 0 ? '▲ ' : ch < 0 ? '▼ ' : '▬ ') + Math.abs(ch * 100).toFixed(1) + '%'; i.style.color = ch > 0 ? 'var(--color-ok)' : ch < 0 ? 'var(--color-bad)' : '#bdbdbd';
+        sp.title = `${c.name}: median auction sale ${l.year} (${l.sales} sales)`; sp.append(b, v, i); return sp; }).filter(Boolean); $('vt-tick').replaceChildren(...chips);
+      $('vt-stat-car').textContent = A.name + ' ' + A.years + (B ? '  vs  ' + B.name + ' ' + B.years : ''); }
+    fill($('h2h'), cars, (c) => [`${c.name} ${c.years}`, c.specs?.what_60k, c.specs?.hp, c.specs?.zero60, c.specs?.insurance, c.specs?.value_trend, c.specs?.risk, link('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(c.name + ' ' + c.years.slice(0, 4)), 'Photos ↗')]);
+  });
+})();
+})();
+</script>
+</body>
+</html>
